@@ -3,8 +3,18 @@ import { AppShell } from "./pages/app-shell";
 import { DashboardPage } from "./pages/dashboard";
 import { SettingsPage } from "./pages/settings";
 import { PlaceholderPage } from "./pages/placeholder";
+import { LoginPage } from "./pages/login";
+import { OTPVerificationPage } from "./pages/otp-verification";
 
 const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
+    {
+        path: "/login",
+        element: <LoginPage />,
+    },
+    {
+        path: "/verify-otp",
+        element: <OTPVerificationPage />,
+    },
     {
         path: "/",
         element: <Navigate to="/app/dashboard" />,
