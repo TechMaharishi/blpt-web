@@ -1,3 +1,5 @@
+"use client"
+
 import {
   ChevronsUpDown,
   LogOut,
@@ -24,6 +26,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { authClient } from "@/lib/auth-client"
+import { useNavigate } from "react-router-dom"
 
 export function NavUser({
   user,
@@ -35,6 +39,17 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          navigate("/login")
+        },
+      },
+    })
+  }
 
   return (
     <SidebarMenu>
@@ -82,7 +97,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

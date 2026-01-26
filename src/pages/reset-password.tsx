@@ -12,62 +12,54 @@ import { Input } from "@/components/ui/input"
 import logo from "@/assets/logo.png"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
-import { useNavigate } from "react-router-dom"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export function LoginPage() {
+export function ResetPasswordPage() {
     return (
         <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-sm">
-                <LoginForm />
+                <ResetPasswordForm />
             </div>
         </div>
     )
 }
 
-function LoginForm({
+function ResetPasswordForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
-    const [showPassword, setShowPassword] = useState(false)
-    const [email, setEmail] = useState("")
+    const [searchParams] = useSearchParams()
+    const email = searchParams.get("email") || ""
+    const otp = searchParams.get("otp") || ""
+    
     const [password, setPassword] = useState("")
-    const [rememberMe, setRememberMe] = useState(false)
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (password !== confirmPassword) {
+            setError("Passwords do not match")
+            return
+        }
+        
         setIsLoading(true)
         setError(null)
 
-        console.log("Attempting sign in...")
-        await authClient.signIn.email({
+        await authClient.emailOtp.resetPassword({
             email,
+            otp,
             password,
-            rememberMe,
         }, {
-            onSuccess: (ctx) => {
-                console.log("Sign in successful", ctx)
-                setIsLoading(false)
-                navigate("/app/dashboard")
+            onSuccess: () => {
+                navigate("/login")
             },
             onError: (ctx) => {
-                console.log("Sign in error", ctx)
-                if (ctx.error.status === 403) {
-                    setError("Please verify your email address. Redirecting to verification...")
-                    // Send verification OTP and redirect
-                    authClient.emailOtp.sendVerificationOtp({
-                        email,
-                        type: "email-verification",
-                    }).then(() => {
-                         navigate(`/verify-otp?email=${encodeURIComponent(email)}&type=email-verification`)
-                    })
-                } else {
-                    setError(ctx.error.message)
-                }
+                setError(ctx.error.message)
                 setIsLoading(false)
             }
         })
@@ -80,9 +72,9 @@ function LoginForm({
                     <div className="flex justify-center mb-4">
                         <img src={logo} alt="Beyond Limit Logo" className="h-24 w-32 object-contain" />
                     </div>
-                    <CardTitle>Login to your admin account</CardTitle>
+                    <CardTitle>Reset Password</CardTitle>
                     <CardDescription>
-                        Enter your email below to login to your account
+                        Enter your new password below.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -94,30 +86,7 @@ function LoginForm({
                                 </Alert>
                             )}
                             <div className="grid gap-2">
-                                <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="m@example.com"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
-                                    <a
-                                        href="/forgot-password"
-                                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          navigate("/forgot-password");
-                                        }}
-                                    >
-                                        Forgot your password?
-                                    </a>
-                                </div>
+                                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">New Password</label>
                                 <div className="relative">
                                     <Input
                                         id="password"
@@ -144,27 +113,24 @@ function LoginForm({
                                     </Button>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox 
-                                    id="remember-me" 
-                                    checked={rememberMe}
-                                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                            <div className="grid gap-2">
+                                <label htmlFor="confirmPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Confirm Password</label>
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    required
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
-                                <label
-                                    htmlFor="remember-me"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                    Remember me
-                                </label>
                             </div>
                             <Button type="submit" className="w-full" disabled={isLoading}>
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Logging in...
+                                        Resetting Password...
                                     </>
                                 ) : (
-                                    "Login"
+                                    "Reset Password"
                                 )}
                             </Button>
                         </div>

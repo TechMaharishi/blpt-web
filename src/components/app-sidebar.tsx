@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client"
 import {
     Home,   
     Library,
@@ -86,12 +87,12 @@ const items: MenuItem[] = [
 ]
 
 export function AppSidebar() {
-    const data = {
-        user: {
-            name: "Demo User",
-            email: "user@example.com",
-            avatar: "/avatars/shadcn.jpg",
-        },
+    const { data: session } = authClient.useSession()
+    
+    const user = {
+        name: session?.user?.name || "User",
+        email: session?.user?.email || "user@example.com",
+        avatar: session?.user?.image || "",
     }
 
     return (
@@ -140,7 +141,7 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className="border-t border-sidebar-border p-4">
-                <NavUser user={data.user} />
+                <NavUser user={user} />
             </SidebarFooter>
         </Sidebar>
     )

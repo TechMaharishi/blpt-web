@@ -1,15 +1,26 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 import { AppShell } from "./pages/app-shell";
 import { DashboardPage } from "./pages/dashboard";
 import { SettingsPage } from "./pages/settings";
 import { PlaceholderPage } from "./pages/placeholder";
 import { LoginPage } from "./pages/login";
 import { OTPVerificationPage } from "./pages/otp-verification";
+import { ForgotPasswordPage } from "./pages/forgot-password";
+import { ResetPasswordPage } from "./pages/reset-password";
+import { authClient } from "@/lib/auth-client";
 
 const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     {
         path: "/login",
         element: <LoginPage />,
+    },
+    {
+        path: "/forgot-password",
+        element: <ForgotPasswordPage />,
+    },
+    {
+        path: "/reset-password",
+        element: <ResetPasswordPage />,
     },
     {
         path: "/verify-otp",
@@ -21,6 +32,13 @@ const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     },
     {
         path: "/app",
+        loader: async () => {
+            const { data } = await authClient.getSession();
+            if (!data?.session) {
+                throw redirect("/login");
+            }
+            return data;
+        },
         element: <AppShell />,
         children: [
             {
