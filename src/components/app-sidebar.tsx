@@ -1,0 +1,187 @@
+import {
+    Home,
+    Settings,
+    User,
+    Library,
+    Users,
+    Ticket,
+    ChevronRight,
+    type LucideIcon
+} from "lucide-react"
+import { Link } from "react-router-dom"
+import logo from "@/assets/logo.png"
+
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+} from "@/components/ui/sidebar"
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+
+type MenuItem = {
+    title: string
+    url?: string
+    icon?: LucideIcon
+    items?: MenuItem[]
+}
+
+const items: MenuItem[] = [
+    {
+        title: "Dashboard",
+        url: "/app/dashboard",
+        icon: Home,
+    },
+    {
+        title: "Content Management",
+        icon: Library,
+        items: [
+            { title: "Short Videos", url: "/app/content/shorts" },
+            { title: "Courses", url: "/app/content/courses" },
+            {
+                title: "Reviews",
+                items: [
+                    { title: "Pending Shorts", url: "/app/content/reviews/shorts" },
+                    { title: "Pending Courses", url: "/app/content/reviews/courses" },
+                ]
+            },
+            { title: "Video Tags", url: "/app/content/tags" },
+        ]
+    },
+    {
+        title: "User Management",
+        icon: Users,
+        items: [
+            { title: "All Users", url: "/app/users/all" },
+            {
+                title: "Assignments",
+                items: [
+                    { title: "Assign Courses", url: "/app/users/assignments/courses" },
+                    { title: "Assign Clinical Learner", url: "/app/users/assignments/clinical" },
+                ]
+            }
+        ]
+    },
+    {
+        title: "Ticket Management",
+        icon: Ticket,
+        items: [
+            { title: "All Tickets", url: "/app/tickets/all" },
+            { title: "Create Ticket", url: "/app/tickets/create" },
+            { title: "Ticket Types", url: "/app/tickets/types" },
+        ]
+    },
+    {
+        title: "Settings",
+        url: "/app/settings",
+        icon: Settings,
+    }
+]
+
+export function AppSidebar() {
+    return (
+        <Sidebar>
+            <SidebarHeader className="flex items-center justify-center border-b border-sidebar-border p-2">
+                <Link to="/app/dashboard">
+                    <img src={logo} alt="Beyond Limit Logo" className="h-24 w-32" />
+                </Link>
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {items.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    {item.items ? (
+                                        <Collapsible className="group/collapsible" defaultOpen>
+                                            <CollapsibleTrigger asChild>
+                                                <SidebarMenuButton className="font-semibold text-sidebar-foreground">
+                                                    {item.icon && <item.icon />}
+                                                    <span>{item.title}</span>
+                                                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                                </SidebarMenuButton>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent>
+                                                <SidebarMenuSub>
+                                                    {item.items.map((subItem) => (
+                                                        <SubMenuItem key={subItem.title} item={subItem} />
+                                                    ))}
+                                                </SidebarMenuSub>
+                                            </CollapsibleContent>
+                                        </Collapsible>
+                                    ) : (
+                                        <SidebarMenuButton asChild>
+                                            <Link to={item.url!}>
+                                                {item.icon && <item.icon />}
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    )}
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
+            <SidebarFooter className="border-t border-sidebar-border p-4">
+                <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent">
+                        <User className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium">Demo User</span>
+                        <span className="text-xs text-sidebar-foreground/70">user@example.com</span>
+                    </div>
+                </div>
+            </SidebarFooter>
+        </Sidebar>
+    )
+}
+
+function SubMenuItem({ item }: { item: MenuItem }) {
+    if (item.items) {
+        return (
+            <SidebarMenuSubItem>
+                <Collapsible className="group/collapsible" defaultOpen>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuSubButton className="font-medium">
+                            <span>{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuSubButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <SidebarMenuSub>
+                            {item.items.map((subItem) => (
+                                <SubMenuItem key={subItem.title} item={subItem} />
+                            ))}
+                        </SidebarMenuSub>
+                    </CollapsibleContent>
+                </Collapsible>
+            </SidebarMenuSubItem>
+        )
+    }
+
+    return (
+        <SidebarMenuSubItem>
+            <SidebarMenuSubButton asChild>
+                <Link to={item.url!}>
+                    <span>{item.title}</span>
+                </Link>
+            </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+    )
+}
