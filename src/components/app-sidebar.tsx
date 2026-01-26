@@ -1,7 +1,5 @@
 import {
-    Home,
-    Settings,
-    User,
+    Home,   
     Library,
     Users,
     Ticket,
@@ -31,6 +29,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { NavUser } from "./nav-user"
 
 type MenuItem = {
     title: string
@@ -83,15 +82,18 @@ const items: MenuItem[] = [
             { title: "Create Ticket", url: "/app/tickets/create" },
             { title: "Ticket Types", url: "/app/tickets/types" },
         ]
-    },
-    {
-        title: "Settings",
-        url: "/app/settings",
-        icon: Settings,
     }
 ]
 
 export function AppSidebar() {
+    const data = {
+        user: {
+            name: "Demo User",
+            email: "user@example.com",
+            avatar: "/avatars/shadcn.jpg",
+        },
+    }
+
     return (
         <Sidebar>
             <SidebarHeader className="flex items-center justify-center border-b border-sidebar-border p-2">
@@ -138,15 +140,7 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className="border-t border-sidebar-border p-4">
-                <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent">
-                        <User className="h-4 w-4" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm font-medium">Demo User</span>
-                        <span className="text-xs text-sidebar-foreground/70">user@example.com</span>
-                    </div>
-                </div>
+                <NavUser user={data.user} />
             </SidebarFooter>
         </Sidebar>
     )
