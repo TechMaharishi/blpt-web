@@ -14,6 +14,7 @@ const OTPVerificationPage = lazy(() => import("./pages/otp-verification").then(m
 const ForgotPasswordPage = lazy(() => import("./pages/forgot-password").then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import("./pages/reset-password").then(m => ({ default: m.ResetPasswordPage })));
 const TicketTypesPage = lazy(() => import("./pages/ticket-management/ticket-types").then(m => ({ default: m.TicketTypesPage })));
+const AllTicketsPage = lazy(() => import("./pages/ticket-management/all-ticket"));
 
 function AppError() {
     const error = useRouteError() as Error;
@@ -143,7 +144,7 @@ const router = createBrowserRouter([
                 children: [
                     {
                         path: "all",
-                        element: <PlaceholderPage />,
+                        element: <AllTicketsPage />,
                     },
                     {
                         path: "create",
