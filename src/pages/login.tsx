@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import logo from "@/assets/logo.png"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { useMutation } from "@tanstack/react-query"
 import { authClient } from "@/lib/auth-client"
 import { useNavigate } from "react-router-dom"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,43 +35,45 @@ function LoginForm({
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [rememberMe, setRememberMe] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
-        setError(null)
-
-        console.log("Attempting sign in...")
-        await authClient.signIn.email({
-            email,
-            password,
-            rememberMe,
-        }, {
-            onSuccess: (ctx) => {
-                console.log("Sign in successful", ctx)
-                setIsLoading(false)
-                navigate("/app/dashboard")
-            },
-            onError: (ctx) => {
-                console.log("Sign in error", ctx)
-                if (ctx.error.status === 403) {
-                    setError("Please verify your email address. Redirecting to verification...")
-                    // Send verification OTP and redirect
-                    authClient.emailOtp.sendVerificationOtp({
-                        email,
-                        type: "email-verification",
-                    }).then(() => {
-                         navigate(`/verify-otp?email=${encodeURIComponent(email)}&type=email-verification`)
-                    })
-                } else {
-                    setError(ctx.error.message)
-                }
-                setIsLoading(false)
+    const { mutate: signIn, isPending } = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await authClient.signIn.email({
+                email,
+                password,
+                rememberMe,
+            })
+            if (error) throw error
+            return data
+        },
+        onSuccess: (data) => {
+            console.log("Sign in successful", data)
+            navigate("/app/dashboard")
+        },
+        onError: (err: any) => {
+            console.log("Sign in error", err)
+            if (err.status === 403) {
+                setError("Please verify your email address. Redirecting to verification...")
+                // Send verification OTP and redirect
+                authClient.emailOtp.sendVerificationOtp({
+                    email,
+                    type: "email-verification",
+                }).then(() => {
+                    navigate(`/verify-otp?email=${encodeURIComponent(email)}&type=email-verification`)
+                })
+            } else {
+                setError(err.message || "An error occurred")
             }
-        })
+        },
+    })
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        setError(null)
+        console.log("Attempting sign in...")
+        signIn()
     }
 
     return (
@@ -157,8 +160,8 @@ function LoginForm({
                                     Remember me
                                 </label>
                             </div>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? (
+                            <Button type="submit" className="w-full" disabled={isPending}>
+                                {isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Logging in...

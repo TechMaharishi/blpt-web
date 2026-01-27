@@ -13,6 +13,7 @@ import {
     InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { authClient } from "@/lib/auth-client"
+import { useMutation } from "@tanstack/react-query"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -23,46 +24,46 @@ export function OTPVerificationPage() {
     const email = searchParams.get("email") || ""
     const type = searchParams.get("type") || "email-verification"
     const [otp, setOtp] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
-        setError(null)
+    const { mutate: verifyOtp, isPending } = useMutation({
+        mutationFn: async () => {
+            if (type === "email-verification") {
+                const { data, error } = await authClient.emailOtp.verifyEmail({
+                    email,
+                    otp,
+                })
+                if (error) throw error
+                return { type: "email-verification", data }
+            } else if (type === "forget-password") {
+                const { data, error } = await authClient.emailOtp.checkVerificationOtp({
+                    email,
+                    type: "forget-password",
+                    otp,
+                })
+                if (error) throw error
+                return { type: "forget-password", data }
+            } else {
+                throw new Error("Invalid verification type")
+            }
+        },
+        onSuccess: (result) => {
+            if (result.type === "email-verification") {
+                navigate("/app/dashboard")
+            } else if (result.type === "forget-password") {
+                navigate(`/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`)
+            }
+        },
+        onError: (err: any) => {
+            setError(err.message || "Verification failed")
+        },
+    })
 
-        if (type === "email-verification") {
-            await authClient.emailOtp.verifyEmail({
-                email,
-                otp,
-            }, {
-                onSuccess: () => {
-                    navigate("/app/dashboard")
-                },
-                onError: (ctx) => {
-                    setError(ctx.error.message)
-                    setIsLoading(false)
-                }
-            })
-        } else if (type === "forget-password") {
-            await authClient.emailOtp.checkVerificationOtp({
-                email,
-                type: "forget-password",
-                otp,
-            }, {
-                onSuccess: () => {
-                    navigate(`/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`)
-                },
-                onError: (ctx) => {
-                    setError(ctx.error.message)
-                    setIsLoading(false)
-                }
-            })
-        } else {
-             setError("Invalid verification type")
-             setIsLoading(false)
-        }
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        setError(null)
+        verifyOtp()
     }
 
     return (
@@ -95,8 +96,8 @@ export function OTPVerificationPage() {
                                     <InputOTPSlot index={5} />
                                 </InputOTPGroup>
                             </InputOTP>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? (
+                            <Button type="submit" className="w-full" disabled={isPending}>
+                                {isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Verifying...

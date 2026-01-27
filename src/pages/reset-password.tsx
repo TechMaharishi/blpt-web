@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import logo from "@/assets/logo.png"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { useMutation } from "@tanstack/react-query"
 import { authClient } from "@/lib/auth-client"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -36,33 +37,37 @@ function ResetPasswordForm({
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const { mutate: resetPassword, isPending } = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await authClient.emailOtp.resetPassword({
+                email,
+                otp,
+                password,
+            })
+            if (error) throw error
+            return data
+        },
+        onSuccess: () => {
+            navigate("/login")
+        },
+        onError: (err: any) => {
+            setError(err.message || "Failed to reset password")
+        },
+    })
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        setError(null)
+        
         if (password !== confirmPassword) {
             setError("Passwords do not match")
             return
         }
         
-        setIsLoading(true)
-        setError(null)
-
-        await authClient.emailOtp.resetPassword({
-            email,
-            otp,
-            password,
-        }, {
-            onSuccess: () => {
-                navigate("/login")
-            },
-            onError: (ctx) => {
-                setError(ctx.error.message)
-                setIsLoading(false)
-            }
-        })
+        resetPassword()
     }
 
     return (
@@ -123,8 +128,8 @@ function ResetPasswordForm({
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? (
+                            <Button type="submit" className="w-full" disabled={isPending}>
+                                {isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Resetting Password...

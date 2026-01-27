@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import logo from "@/assets/logo.png"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
+import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -30,26 +31,29 @@ function ForgotPasswordForm({
     ...props
 }: React.ComponentProps<"div">) {
     const [email, setEmail] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
-        setError(null)
+    const { mutate: sendResetCode, isPending } = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await authClient.forgetPassword.emailOtp({
+                email,
+            })
+            if (error) throw error
+            return data
+        },
+        onSuccess: () => {
+            navigate(`/verify-otp?email=${encodeURIComponent(email)}&type=forget-password`)
+        },
+        onError: (err: any) => {
+            setError(err.message || "Failed to send reset code")
+        },
+    })
 
-        await authClient.forgetPassword.emailOtp({
-            email,
-        }, {
-            onSuccess: () => {
-                navigate(`/verify-otp?email=${encodeURIComponent(email)}&type=forget-password`)
-            },
-            onError: (ctx) => {
-                setError(ctx.error.message)
-                setIsLoading(false)
-            }
-        })
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        setError(null)
+        sendResetCode()
     }
 
     return (
@@ -83,8 +87,8 @@ function ForgotPasswordForm({
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? (
+                            <Button type="submit" className="w-full" disabled={isPending}>
+                                {isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Sending Code...
