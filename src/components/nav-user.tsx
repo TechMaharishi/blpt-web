@@ -31,7 +31,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
-import { useNavigate } from "react-router-dom"
 
 export function NavUser({
   user,
@@ -43,7 +42,6 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const navigate = useNavigate()
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
   const [showChangePassword, setShowChangePassword] = React.useState(false)
   const [showProfile, setShowProfile] = React.useState(false)
