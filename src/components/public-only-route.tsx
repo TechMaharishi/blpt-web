@@ -3,15 +3,15 @@ import { Navigate, Outlet } from "react-router-dom"
 import { PageLoader } from "./page-loader"
 import type { ReactNode } from "react"
 
-export function ProtectedRoute({ children }: { children?: ReactNode }) {
+export function PublicOnlyRoute({ children }: { children?: ReactNode }) {
     const { data: session, isPending } = authClient.useSession()
 
     if (isPending && !session) {
         return <PageLoader />
     }
 
-    if (!session) {
-        return <Navigate to="/login" />
+    if (session) {
+        return <Navigate to="/app/dashboard" />
     }
 
     return children ? <>{children}</> : <Outlet />

@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import logo from "@/assets/logo.png"
+import { Spinner } from "./ui/spinner"
 
 import {
     Sidebar,
@@ -87,11 +88,11 @@ const items: MenuItem[] = [
 ]
 
 export function AppSidebar() {
-    const { data: session } = authClient.useSession()
+    const { data: session, isPending } = authClient.useSession()
     
     const user = {
-        name: session?.user?.name || "User",
-        email: session?.user?.email || "user@example.com",
+        name: session?.user?.name || "",
+        email: session?.user?.email || "",
         avatar: session?.user?.image || "",
     }
 
@@ -141,7 +142,13 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className="border-t border-sidebar-border p-4">
-                <NavUser user={user} />
+                {isPending ? (
+                    <div className="flex justify-center p-2">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <NavUser user={user} />
+                )}
             </SidebarFooter>
         </Sidebar>
     )

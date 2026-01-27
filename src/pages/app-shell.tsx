@@ -6,6 +6,8 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Suspense } from "react"
+import { PageLoader } from "@/components/page-loader"
 
 export function AppShell() {
     return (
@@ -20,7 +22,9 @@ export function AppShell() {
                     </div>
                 </header>
                 <div className="flex flex-1 flex-col gap-4 p-4">
-                    <Outlet />
+                    <Suspense fallback={<PageLoader />}>
+                        <Outlet />
+                    </Suspense>
                 </div>
             </SidebarInset>
         </SidebarProvider>

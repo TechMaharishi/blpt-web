@@ -1,14 +1,19 @@
-import { createBrowserRouter, Navigate, redirect, useRouteError } from "react-router-dom";
+import { createBrowserRouter, Navigate, useRouteError } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { AppShell } from "./pages/app-shell";
-import { DashboardPage } from "./pages/dashboard";
-import { SettingsPage } from "./pages/settings";
-import { PlaceholderPage } from "./pages/placeholder";
-import { LoginPage } from "./pages/login";
-import { OTPVerificationPage } from "./pages/otp-verification";
-import { ForgotPasswordPage } from "./pages/forgot-password";
-import { ResetPasswordPage } from "./pages/reset-password";
-import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { ProtectedRoute } from "@/components/protected-route";
+import { PublicOnlyRoute } from "@/components/public-only-route";
+import { PageLoader } from "@/components/page-loader";
+
+// Lazy load pages
+const DashboardPage = lazy(() => import("./pages/dashboard").then(m => ({ default: m.DashboardPage })));
+const SettingsPage = lazy(() => import("./pages/settings").then(m => ({ default: m.SettingsPage })));
+const PlaceholderPage = lazy(() => import("./pages/placeholder").then(m => ({ default: m.PlaceholderPage })));
+const LoginPage = lazy(() => import("./pages/login").then(m => ({ default: m.LoginPage })));
+const OTPVerificationPage = lazy(() => import("./pages/otp-verification").then(m => ({ default: m.OTPVerificationPage })));
+const ForgotPasswordPage = lazy(() => import("./pages/forgot-password").then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("./pages/reset-password").then(m => ({ default: m.ResetPasswordPage })));
 
 function AppError() {
     const error = useRouteError() as Error;
@@ -25,22 +30,44 @@ function AppError() {
     );
 }
 
-const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
+const router = createBrowserRouter([
     {
         path: "/login",
-        element: <LoginPage />,
+        element: (
+            <PublicOnlyRoute>
+                <Suspense fallback={<PageLoader />}>
+                    <LoginPage />
+                </Suspense>
+            </PublicOnlyRoute>
+        ),
     },
     {
         path: "/forgot-password",
-        element: <ForgotPasswordPage />,
+        element: (
+            <PublicOnlyRoute>
+                <Suspense fallback={<PageLoader />}>
+                    <ForgotPasswordPage />
+                </Suspense>
+            </PublicOnlyRoute>
+        ),
     },
     {
         path: "/reset-password",
-        element: <ResetPasswordPage />,
+        element: (
+            <PublicOnlyRoute>
+                <Suspense fallback={<PageLoader />}>
+                    <ResetPasswordPage />
+                </Suspense>
+            </PublicOnlyRoute>
+        ),
     },
     {
         path: "/verify-otp",
-        element: <OTPVerificationPage />,
+        element: (
+            <Suspense fallback={<PageLoader />}>
+                <OTPVerificationPage />
+            </Suspense>
+        ),
     },
     {
         path: "/",
@@ -48,22 +75,12 @@ const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     },
     {
         path: "/app",
-        loader: async () => {
-            try {
-                const { data } = await authClient.getSession();
-                if (!data?.session) {
-                    throw redirect("/login");
-                }
-                return data;
-            } catch (error) {
-                // If it's a redirect, let it pass through
-                if (error instanceof Response) throw error;
-                // For other errors (network, etc), assume not logged in -> redirect to login
-                throw redirect("/login");
-            }
-        },
         errorElement: <AppError />,
-        element: <AppShell />,
+        element: (
+            <ProtectedRoute>
+                <AppShell />
+            </ProtectedRoute>
+        ),
         children: [
             {
                 path: "dashboard",
