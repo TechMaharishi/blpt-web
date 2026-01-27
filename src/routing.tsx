@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect, useRouteError } from "react-router-dom";
 import { AppShell } from "./pages/app-shell";
 import { DashboardPage } from "./pages/dashboard";
 import { SettingsPage } from "./pages/settings";
@@ -8,6 +8,22 @@ import { OTPVerificationPage } from "./pages/otp-verification";
 import { ForgotPasswordPage } from "./pages/forgot-password";
 import { ResetPasswordPage } from "./pages/reset-password";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+
+function AppError() {
+    const error = useRouteError() as Error;
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center gap-4">
+            <h2 className="text-xl font-semibold">Something went wrong</h2>
+            <p className="text-muted-foreground text-center max-w-md">
+                {error?.message || "We couldn't connect to the server. Please check your internet connection or try again later."}
+            </p>
+            <Button onClick={() => window.location.href = "/login"}>
+                Back to Login
+            </Button>
+        </div>
+    );
+}
 
 const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     {
@@ -39,6 +55,7 @@ const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
             }
             return data;
         },
+        errorElement: <AppError />,
         element: <AppShell />,
         children: [
             {
