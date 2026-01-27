@@ -12,6 +12,7 @@ export default defineConfig({
         target: "https://blpt-backend.onrender.com",
         changeOrigin: true,
         secure: false,
+        cookieDomainRewrite: "localhost",
       },
     },
   },

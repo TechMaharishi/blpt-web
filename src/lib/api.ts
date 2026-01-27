@@ -3,7 +3,7 @@ import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "a
 
 // Create axios instance with default config
 export const apiClient: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: import.meta.env.VITE_API_URL || "https://blpt-backend.onrender.com/api",
     headers: {
         "Content-Type": "application/json",
     },
@@ -14,11 +14,10 @@ export const apiClient: AxiosInstance = axios.create({
 // Request Interceptor
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // You can add logic here to attach tokens if needed
-        // const token = localStorage.getItem('token');
-        // if (token) {
-        //   config.headers.Authorization = `Bearer ${token}`;
-        // }
+        const token = localStorage.getItem('token') || localStorage.getItem('better-auth.session_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
         return config
     },
     (error: AxiosError) => {

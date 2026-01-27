@@ -14,6 +14,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar"
 import { ChangePasswordDialog } from "@/components/change-password-dialog"
+import { ProfileDialog } from "@/components/profile-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,7 @@ export function NavUser({
   const navigate = useNavigate()
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
   const [showChangePassword, setShowChangePassword] = React.useState(false)
+  const [showProfile, setShowProfile] = React.useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -70,6 +72,10 @@ export function NavUser({
         open={showChangePassword} 
         onOpenChange={setShowChangePassword} 
       />
+      <ProfileDialog 
+        open={showProfile} 
+        onOpenChange={setShowProfile} 
+      />
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -79,7 +85,7 @@ export function NavUser({
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={user.avatar || undefined} alt={user.name} />
                   <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -109,7 +115,10 @@ export function NavUser({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => navigate("/app/settings")}>
+                <DropdownMenuItem onSelect={(e) => {
+                  e.preventDefault()
+                  setShowProfile(true)
+                }}>
                   <Settings />
                   Account
                 </DropdownMenuItem>

@@ -8,7 +8,6 @@ import { PageLoader } from "@/components/page-loader";
 
 // Lazy load pages
 const DashboardPage = lazy(() => import("./pages/dashboard").then(m => ({ default: m.DashboardPage })));
-const SettingsPage = lazy(() => import("./pages/settings").then(m => ({ default: m.SettingsPage })));
 const PlaceholderPage = lazy(() => import("./pages/placeholder").then(m => ({ default: m.PlaceholderPage })));
 const LoginPage = lazy(() => import("./pages/login").then(m => ({ default: m.LoginPage })));
 const OTPVerificationPage = lazy(() => import("./pages/otp-verification").then(m => ({ default: m.OTPVerificationPage })));
@@ -154,10 +153,6 @@ const router = createBrowserRouter([
                         element: <PlaceholderPage />,
                     },
                 ]
-            },
-            {
-                path: "settings",
-                element: <SettingsPage />,
             },
         ],
     },
