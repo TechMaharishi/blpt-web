@@ -49,11 +49,18 @@ const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     {
         path: "/app",
         loader: async () => {
-            const { data } = await authClient.getSession();
-            if (!data?.session) {
+            try {
+                const { data } = await authClient.getSession();
+                if (!data?.session) {
+                    throw redirect("/login");
+                }
+                return data;
+            } catch (error) {
+                // If it's a redirect, let it pass through
+                if (error instanceof Response) throw error;
+                // For other errors (network, etc), assume not logged in -> redirect to login
                 throw redirect("/login");
             }
-            return data;
         },
         errorElement: <AppError />,
         element: <AppShell />,
