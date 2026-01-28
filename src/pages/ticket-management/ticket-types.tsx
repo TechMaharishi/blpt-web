@@ -81,8 +81,8 @@ const deleteTicketType = async (id: string) => {
 // Reusable Page Header Component
 const PageHeader = () => (
     <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">Ticket Types</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold tracking-tight">Ticket Types</h2>
+        <p className="text-muted-foreground">
             Manage the types of tickets available in the system.
         </p>
     </div>
@@ -260,15 +260,16 @@ export function TicketTypesPage() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col gap-6">
-                <PageHeader />
-                
-                {/* Action Buttons Skeleton */}
-                <div className="flex justify-end gap-2">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-36" />
+            <div className="w-full h-full flex flex-col space-y-4 p-4 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <PageHeader />
+                    {/* Action Buttons Skeleton */}
+                    <div className="flex justify-end gap-2">
+                        <Skeleton className="h-10 w-24" />
+                        <Skeleton className="h-10 w-36" />
+                    </div>
                 </div>
-
+                
                 {/* Table Skeleton */}
                 <div className="border rounded-md">
                     {/* Table Header */}
@@ -295,7 +296,7 @@ export function TicketTypesPage() {
 
     if (error) {
         return (
-            <div className="flex flex-col gap-6">
+            <div className="w-full h-full flex flex-col space-y-4 p-4 md:p-8">
                 <PageHeader />
                 <div className="flex items-center justify-center h-64">
                     <div className="text-center">
@@ -316,8 +317,30 @@ export function TicketTypesPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <PageHeader />
+        <div className="w-full h-full flex flex-col space-y-4 p-4 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Ticket Types</h2>
+                    <p className="text-muted-foreground">
+                        Manage the types of tickets available in the system.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="destructive"
+                        className="gap-2"
+                        disabled={Object.keys(rowSelection).length === 0}
+                        onClick={handleDeleteClick}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                    </Button>
+                    <Button onClick={handleAddClick} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Ticket Type
+                    </Button>
+                </div>
+            </div>
 
             {/* Create Ticket Type Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -373,23 +396,6 @@ export function TicketTypesPage() {
                     </form>
                 </DialogContent>
             </Dialog>
-
-            {/* Action Buttons Row */}
-            <div className="flex justify-end gap-2">
-                <Button
-                    variant="destructive"
-                    className="gap-2"
-                    disabled={Object.keys(rowSelection).length === 0}
-                    onClick={handleDeleteClick}
-                >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                </Button>
-                <Button onClick={handleAddClick} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Ticket Type
-                </Button>
-            </div>
 
             {/* Scrollable Content Area */}
             <div ref={scrollContainerRef} style={{ maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>
