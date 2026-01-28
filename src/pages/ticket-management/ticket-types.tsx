@@ -18,6 +18,8 @@ import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { RowSelectionState } from '@tanstack/react-table'
 
+import { Skeleton } from '@/components/ui/skeleton'
+
 // Define the data type matching API response
 type TicketType = {
     id: string
@@ -260,10 +262,31 @@ export function TicketTypesPage() {
         return (
             <div className="flex flex-col gap-6">
                 <PageHeader />
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                        <p className="mt-2 text-gray-600">Loading ticket types...</p>
+                
+                {/* Action Buttons Skeleton */}
+                <div className="flex justify-end gap-2">
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-36" />
+                </div>
+
+                {/* Table Skeleton */}
+                <div className="border rounded-md">
+                    {/* Table Header */}
+                    <div className="border-b p-4 bg-muted/40 grid grid-cols-12 gap-4">
+                         <Skeleton className="h-6 col-span-3" />
+                         <Skeleton className="h-6 col-span-3" />
+                         <Skeleton className="h-6 col-span-6" />
+                    </div>
+                    
+                    {/* Table Rows */}
+                    <div className="p-4 space-y-6">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="grid grid-cols-12 gap-4 items-center border-b pb-4 last:border-0 last:pb-0">
+                                <Skeleton className="h-4 col-span-3" />
+                                <Skeleton className="h-4 col-span-3" />
+                                <Skeleton className="h-4 col-span-6" />
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

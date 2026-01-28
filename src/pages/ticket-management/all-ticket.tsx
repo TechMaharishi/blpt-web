@@ -284,29 +284,43 @@ export default function AllTicketsPage() {
       </div>
 
       {/* Right Panel - Ticket Details */}
-      {selectedTicket ? (
+      {(selectedTicket || isLoadingSelected || isLoadingTickets || (allTickets.length > 0 && !selectedTicketId)) ? (
         <div className="flex flex-1 flex-col overflow-hidden bg-background">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b h-[60px]">
-            <div className="flex items-center gap-4">
-              <Avatar>
-                <AvatarFallback>{selectedTicket.user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="font-semibold">{selectedTicket.user.name}</div>
-                <div className="text-xs text-muted-foreground">{selectedTicket.user.email}</div>
+            {selectedTicket ? (
+              <div className="flex items-center gap-4">
+                <Avatar>
+                  <AvatarFallback>{selectedTicket.user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold">{selectedTicket.user.name}</div>
+                  <div className="text-xs text-muted-foreground">{selectedTicket.user.email}</div>
+                </div>
               </div>
-            </div>
+            ) : (
+               <div className="flex items-center gap-4">
+                 <div className="h-10 w-10 rounded-full bg-muted/50 animate-pulse" />
+                 <div className="space-y-2">
+                   <div className="h-4 w-32 bg-muted/50 rounded animate-pulse" />
+                   <div className="h-3 w-48 bg-muted/50 rounded animate-pulse" />
+                 </div>
+               </div>
+            )}
             <div className="flex items-center gap-2">
             </div>
           </div>
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {isLoadingSelected ? (
+            {!selectedTicket ? (
               <div className="space-y-4">
                  <div className="h-8 w-1/3 bg-muted/50 rounded animate-pulse" />
                  <div className="h-32 w-full bg-muted/50 rounded animate-pulse" />
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="h-4 w-full bg-muted/50 rounded animate-pulse" />
+                    <div className="h-4 w-full bg-muted/50 rounded animate-pulse" />
+                 </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -366,14 +380,15 @@ export default function AllTicketsPage() {
 
           {/* Fixed Input Area */}
           <div className="p-4 bg-background border-t">
-            {selectedTicket.currentStatus === 'resolved' ? (
+            {selectedTicket ? (
+              selectedTicket.currentStatus === 'resolved' ? (
                 <div className="flex items-center justify-center p-4 bg-muted/20 rounded-lg border border-dashed">
                     <p className="text-muted-foreground text-sm flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-green-500"></span>
                         This ticket has been resolved.
                     </p>
                 </div>
-            ) : (
+              ) : (
                 <div className="flex gap-2">
                     <Textarea
                         placeholder="Type your resolution message here..."
@@ -390,6 +405,12 @@ export default function AllTicketsPage() {
                         <span className="sr-only">Resolve</span>
                     </Button>
                 </div>
+              )
+            ) : (
+                 <div className="flex gap-2">
+                    <div className="w-full h-[50px] bg-muted/50 rounded animate-pulse" />
+                    <div className="h-[50px] w-[50px] bg-muted/50 rounded animate-pulse" />
+                 </div>
             )}
           </div>
         </div>
