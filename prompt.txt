@@ -1,0 +1,419 @@
+Here the concept is a trainee is assigned to user.
+We need a UI where we can assign trainee to user. 
+
+Here is the API for assigning trainee to user: 
+
+curl --location 'https://blpt-backend.onrender.com/api/assign-clinical/assign' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer sJk1fVR05z17XPCtEJrVviU8kx0bRH7l' \
+--data-raw '{
+  "userId": "697b4a690258cecb19c10e10",
+  "traineeId": "697b4b080258cecb19c10e14",
+  "traineeEmail": "demotrainee@example.com",
+  "traineeName": "Demo Trainee"
+}
+'
+
+Response : 
+{
+    "success": true,
+    "message": "Trainee assignment updated",
+    "data": {
+        "_id": "697b4bd1eb1974ee59d1ca85",
+        "userId": "697b4a690258cecb19c10e10",
+        "__v": 0,
+        "createdAt": "2026-01-29T12:00:17.465Z",
+        "traineeEmail": "demotrainee@example.com",
+        "traineeId": "697b4b080258cecb19c10e14",
+        "traineeName": "Demo Trainee",
+        "updatedAt": "2026-01-29T12:00:17.465Z"
+    }
+}
+
+To know Assigned trainee of the user using user userid: 
+
+curl --location 'https://blpt-backend.onrender.com/api/assign-clinical/697b4a690258cecb19c10e10' \
+--header 'Authorization: Bearer sJk1fVR05z17XPCtEJrVviU8kx0bRH7l' \
+--data ''
+
+{
+    "success": true,
+    "message": "Trainee assignment fetched",
+    "data": {
+        "userId": "697b4a690258cecb19c10e10",
+        "traineeId": "697b4b080258cecb19c10e14",
+        "traineeEmail": "demotrainee@example.com",
+        "traineeName": "Demo Trainee"
+    }
+}
+
+To know all the user asiigned to a trainee: 
+
+curl --location 'https://blpt-backend.onrender.com/api/assign-clinical/trainee/697b4b080258cecb19c10e14' \
+--header 'Authorization: Bearer sJk1fVR05z17XPCtEJrVviU8kx0bRH7l'
+
+{
+    "success": true,
+    "message": "Assigned users for trainee fetched",
+    "data": [
+        {
+            "id": "697b4a690258cecb19c10e10",
+            "name": "Demo User",
+            "email": "demouser@example.com"
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "offset": 0,
+        "limit": 10,
+        "total": 1,
+        "hasNext": false
+    }
+}
+
+Here is the API We can see the links between the user and trainee.
+Which user has which trainee.
+For the context A trainee can have multiple user. 
+curl --location 'https://blpt-backend.onrender.com/api/admin/list-user?field=name&sortBy=createdAt&sortDirection=asc&page=1&limit=100' \
+--header 'Authorization: Bearer sJk1fVR05z17XPCtEJrVviU8kx0bRH7l'
+
+{
+    "data": {
+        "users": [
+            {
+                "name": "Support Admins",
+                "email": "support@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2025-12-09T06:29:13.654Z",
+                "updatedAt": "2026-01-28T14:16:50.010Z",
+                "role": "admin",
+                "banned": false,
+                "phone": "77249066",
+                "id": "6937c1b95bba673ea5f36c10",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Jacob Esposito",
+                "email": "jacobe@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T03:09:23.427Z",
+                "updatedAt": "2026-01-16T03:11:52.363Z",
+                "role": "admin",
+                "banned": false,
+                "accountType": "master",
+                "id": "6969abe3235b3222d9f6ef85",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Renee Mapstone",
+                "email": "reneem@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T04:00:21.023Z",
+                "updatedAt": "2026-01-16T04:00:48.921Z",
+                "role": "user",
+                "banned": false,
+                "id": "6969b7d5235b3222d9f6efa9",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Nicole Martin",
+                "email": "nicolem@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T04:00:35.115Z",
+                "updatedAt": "2026-01-16T04:02:17.529Z",
+                "role": "user",
+                "banned": false,
+                "id": "6969b7e3235b3222d9f6efaf",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Symone Esposito",
+                "email": "symonee@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T04:00:43.825Z",
+                "updatedAt": "2026-01-16T04:02:09.545Z",
+                "role": "user",
+                "banned": false,
+                "id": "6969b7eb235b3222d9f6efb2",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Jenny Fung",
+                "email": "jennyf@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T04:00:46.325Z",
+                "updatedAt": "2026-01-16T04:01:22.161Z",
+                "role": "user",
+                "banned": false,
+                "id": "6969b7ee235b3222d9f6efb5",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Libby Strassmeir",
+                "email": "libbys@beyondlimitstherapy.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-16T04:01:16.406Z",
+                "updatedAt": "2026-01-16T04:01:46.767Z",
+                "role": "user",
+                "banned": false,
+                "id": "6969b80c235b3222d9f6efcf",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Aaron Stubbings",
+                "email": "aaron@ravel.com.au",
+                "emailVerified": true,
+                "createdAt": "2026-01-20T00:44:39.722Z",
+                "updatedAt": "2026-01-20T00:47:45.520Z",
+                "role": "user",
+                "banned": false,
+                "id": "696ecff7d04f318de65fcb7c",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Ketan ubhada",
+                "email": "ketanubhada91@gmail.com",
+                "emailVerified": true,
+                "createdAt": "2026-01-28T10:57:19.434Z",
+                "updatedAt": "2026-01-28T10:58:38.587Z",
+                "role": "user",
+                "banned": false,
+                "accountType": "develop",
+                "id": "6979eb8fb7ca81fed6025329",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Alannah Brooking",
+                "email": "lanalou2014@gmail.com",
+                "emailVerified": true,
+                "createdAt": "2026-01-28T12:14:38.566Z",
+                "updatedAt": "2026-01-29T11:03:20.481Z",
+                "role": "user",
+                "banned": false,
+                "id": "6979fdaeb7ca81fed602537d",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Elizabeth Mcateer",
+                "email": "emcateer315@gmail.com",
+                "emailVerified": true,
+                "createdAt": "2026-01-28T21:24:50.948Z",
+                "updatedAt": "2026-01-28T21:25:31.293Z",
+                "role": "user",
+                "banned": false,
+                "id": "697a7ea20258cecb19c10c95",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            },
+            {
+                "name": "Demo User",
+                "email": "demouser@example.com",
+                "emailVerified": false,
+                "createdAt": "2026-01-29T11:54:17.953Z",
+                "updatedAt": "2026-01-29T11:54:17.953Z",
+                "role": "user",
+                "banned": false,
+                "phone": "0000000000",
+                "accountType": "free",
+                "id": "697b4a690258cecb19c10e10",
+                "traineeName": "Demo Trainee",
+                "traineeEmail": "demotrainee@example.com",
+                "traineeId": "697b4b080258cecb19c10e14"
+            },
+            {
+                "name": "Demo Trainee",
+                "email": "demotrainee@example.com",
+                "emailVerified": false,
+                "createdAt": "2026-01-29T11:56:56.043Z",
+                "updatedAt": "2026-01-29T11:56:56.043Z",
+                "role": "trainee",
+                "banned": false,
+                "phone": "0000000000",
+                "accountType": "master",
+                "id": "697b4b080258cecb19c10e14",
+                "traineeName": null,
+                "traineeEmail": null,
+                "traineeId": null
+            }
+        ],
+        "meta": {
+            "page": 1,
+            "offset": 0,
+            "limit": 100,
+            "total": 13,
+            "totalPages": 1,
+            "hasNext": false,
+            "hasPrev": false
+        }
+    }
+}
+
+Build a production-grade User–Trainee Relationship Management admin page in React whose sole responsibility is managing the assignment between users and trainees.
+
+Core technical constraints
+
+Use TanStack Query for all server state (fetching, caching, mutations, invalidation).
+
+Use TanStack Virtual to virtualize table rows for scalability.
+
+Use only official shadcn/ui components and strictly follow shadcn design and accessibility guidelines.
+
+Avoid custom UI components unless absolutely unavoidable.
+
+Page layout
+
+Display a clear heading (e.g., “User–Trainee Assignments”) and a concise subheading explaining that this page manages clinical trainee assignments.
+
+No global CRUD actions; all interactions are row-level.
+
+Table layout & scrolling behavior
+
+Render data inside a table wrapped by a container with a fixed maximum height.
+
+The table may grow naturally until the max height is reached.
+
+Once exceeded, only the table body scrolls, while the table header remains fixed (sticky).
+
+Use TanStack Virtual so only visible rows are rendered.
+
+Table structure (strict)
+
+First column: checkbox
+
+Single-row selection only (multi-select not allowed)
+
+Selecting a row deselects any previously selected row
+
+Columns:
+
+User (single column combining name + email)
+
+Assigned Trainee (trainee name + email, or “Not Assigned”)
+
+Assignment Status (Assigned / Not Assigned)
+
+Assignment Date (if available)
+
+Actions (three-dot menu)
+
+Ensure table headers and table cells are perfectly aligned and visually consistent.
+
+Fetch users with assignment data
+
+Use this API as the primary data source:
+
+curl --location 'https://blpt-backend.onrender.com/api/admin/list-user?field=name&sortBy=createdAt&sortDirection=asc&page=1&limit=100' \
+--header 'Authorization: Bearer <TOKEN>'
+
+
+Use the following fields to determine assignment:
+
+traineeId
+
+traineeName
+
+traineeEmail
+
+Row actions (three-dot dropdown)
+
+Each row must provide:
+
+Assign Trainee / Change Trainee
+
+View Assigned Trainee
+
+Assign / Change trainee flow (core feature)
+
+Clicking Assign Trainee / Change Trainee opens a modal dialog.
+
+The dialog must:
+
+Display selected user details (read-only)
+
+Allow selecting a trainee (users with role = trainee)
+
+Show the currently assigned trainee if one exists
+
+Assign trainee API
+
+curl --location 'https://blpt-backend.onrender.com/api/assign-clinical/assign' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <TOKEN>' \
+--data-raw '{
+  "userId": "<USER_ID>",
+  "traineeId": "<TRAINEE_ID>",
+  "traineeEmail": "<TRAINEE_EMAIL>",
+  "traineeName": "<TRAINEE_NAME>"
+}'
+
+
+Expected response
+
+{
+  "success": true,
+  "message": "Trainee assignment updated"
+}
+
+
+On success:
+
+Close dialog
+
+Show success toast
+
+Invalidate users list query
+
+View assigned trainee (read-only)
+
+Optionally fetch assignment details using:
+
+curl --location 'https://blpt-backend.onrender.com/api/assign-clinical/<USER_ID>' \
+--header 'Authorization: Bearer <TOKEN>'
+
+
+Use this for verification or detail view only.
+
+Data integrity rules (must be enforced)
+
+A user can be assigned to only one trainee.
+
+A trainee can be assigned to multiple users.
+
+Reassigning a trainee must require explicit confirmation.
+
+UI must clearly indicate unassigned users.
+
+UX & correctness requirements
+
+Use shadcn dialogs, dropdowns, and toasts.
+
+Handle loading, empty, and error states explicitly.
+
+No layout shift during loading or mutation.
+
+Keyboard navigation and focus trapping must work correctly.
+
+The UI should feel calm, modern, and admin-grade.
+
+ 

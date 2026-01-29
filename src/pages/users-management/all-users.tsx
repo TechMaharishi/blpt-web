@@ -36,7 +36,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -44,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Types ---
 
@@ -514,8 +514,12 @@ export default function AllUsersPage() {
           className="max-h-[500px] overflow-auto relative w-full"
         >
           {isLoading ? (
-            <div className="flex h-40 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex flex-col gap-2 p-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ))}
             </div>
           ) : isError ? (
             <div className="flex h-40 items-center justify-center text-destructive">

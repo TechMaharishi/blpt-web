@@ -7,15 +7,16 @@ import { PublicOnlyRoute } from "@/components/public-only-route";
 import { PageLoader } from "@/components/page-loader";
 
 // Lazy load pages
-const DashboardPage = lazy(() => import("./pages/dashboard").then(m => ({ default: m.DashboardPage })));
-const PlaceholderPage = lazy(() => import("./pages/placeholder").then(m => ({ default: m.PlaceholderPage })));
-const LoginPage = lazy(() => import("./pages/login").then(m => ({ default: m.LoginPage })));
-const OTPVerificationPage = lazy(() => import("./pages/otp-verification").then(m => ({ default: m.OTPVerificationPage })));
-const ForgotPasswordPage = lazy(() => import("./pages/forgot-password").then(m => ({ default: m.ForgotPasswordPage })));
-const ResetPasswordPage = lazy(() => import("./pages/reset-password").then(m => ({ default: m.ResetPasswordPage })));
-const TicketTypesPage = lazy(() => import("./pages/ticket-management/ticket-types").then(m => ({ default: m.TicketTypesPage })));
-const AllTicketsPage = lazy(() => import("./pages/ticket-management/all-ticket"));
-const AllUsersPage = lazy(() => import("./pages/users-management/all-users"));
+const DashboardPage = lazy(() => import("@/pages/dashboard").then(m => ({ default: m.DashboardPage })));
+const PlaceholderPage = lazy(() => import("@/pages/placeholder").then(m => ({ default: m.PlaceholderPage })));
+const LoginPage = lazy(() => import("@/pages/login").then(m => ({ default: m.LoginPage })));
+const OTPVerificationPage = lazy(() => import("@/pages/otp-verification").then(m => ({ default: m.OTPVerificationPage })));
+const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password").then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("@/pages/reset-password").then(m => ({ default: m.ResetPasswordPage })));
+const TicketTypesPage = lazy(() => import("@/pages/ticket-management/ticket-types").then(m => ({ default: m.TicketTypesPage })));
+const AllTicketsPage = lazy(() => import("@/pages/ticket-management/all-ticket"));
+const AllUsersPage = lazy(() => import("@/pages/users-management/all-users"));
+const AssignTraineePage = lazy(() => import("@/pages/users-management/assign-trainee"));
 
 
 function AppError() {
@@ -135,7 +136,7 @@ const router = createBrowserRouter([
                             },
                             {
                                 path: "clinical",
-                                element: <PlaceholderPage />,
+                                element: <AssignTraineePage />,
                             },
                         ]
                     },
