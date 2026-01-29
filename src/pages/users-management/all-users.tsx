@@ -130,6 +130,11 @@ const resetUserPassword = async (payload: { userId: string; newPassword: string 
   return response.data;
 };
 
+const createUser = async (payload: any) => {
+  const response = await apiClient.post("/admin/create-user", payload);
+  return response.data;
+};
+
 // --- Helpers ---
 
 const formatDate = (dateString: string) => {
@@ -172,6 +177,17 @@ export default function AllUsersPage() {
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
   const [passwordResetUser, setPasswordResetUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState("");
+
+  // Add User State
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "user",
+    accountType: "",
+    phone: "",
+  });
 
   // Filter, Sort & Pagination State
   const [search, setSearch] = useState("");
@@ -278,6 +294,26 @@ export default function AllUsersPage() {
     },
   });
 
+  const createUserMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      toast.success("User created successfully");
+      setIsAddUserOpen(false);
+      setNewUser({
+        name: "",
+        email: "",
+        password: "",
+        role: "user",
+        accountType: "",
+        phone: "",
+      });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to create user");
+    },
+  });
+
   // Virtualizer
   const rowVirtualizer = useVirtualizer({
     count: users.length,
@@ -376,6 +412,11 @@ export default function AllUsersPage() {
     }
   };
 
+  const handleAddUserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createUserMutation.mutate(newUser);
+  };
+
   const { getVirtualItems, getTotalSize } = rowVirtualizer;
   const virtualItems = getVirtualItems();
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
@@ -405,7 +446,7 @@ export default function AllUsersPage() {
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </Button>
-          <Button className="w-[120px]">
+          <Button className="w-[120px]" onClick={() => setIsAddUserOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add User
           </Button>
@@ -683,6 +724,121 @@ export default function AllUsersPage() {
           </Button>
         </div>
       </div>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent className="max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account. All fields are required.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddUserSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newName">Name</Label>
+                <Input
+                  id="newName"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  required
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newEmail">Email</Label>
+                <Input
+                  id="newEmail"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  placeholder="john@example.com"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPasswordInput">Password</Label>
+                <Input
+                  id="newPasswordInput"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  minLength={8}
+                  placeholder="********"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPhone">Phone</Label>
+                <Input
+                  id="newPhone"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                  required
+                  placeholder="123-456-7890"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newRole">Role</Label>
+                <Select
+                  value={newUser.role}
+                  onValueChange={(val) => setNewUser({ ...newUser, role: val })}
+                >
+                  <SelectTrigger id="newRole">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Super Admin</SelectItem>
+                    <SelectItem value="trainer">Training Admin</SelectItem>
+                    <SelectItem value="trainee">Clinical Learner</SelectItem>
+                    <SelectItem value="user">Individual Learner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newAccountType">Account Type</Label>
+                <Select
+                  value={newUser.accountType}
+                  onValueChange={(val) => setNewUser({ ...newUser, accountType: val })}
+                >
+                  <SelectTrigger id="newAccountType">
+                    <SelectValue placeholder="Select account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="develop">Develop</SelectItem>
+                    <SelectItem value="master">Master</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddUserOpen(false)}
+                disabled={createUserMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createUserMutation.isPending}>
+                {createUserMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Create User
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
