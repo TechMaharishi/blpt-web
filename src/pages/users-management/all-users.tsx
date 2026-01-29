@@ -598,16 +598,24 @@ export default function AllUsersPage() {
                       </TableCell>
                       <TableCell className="w-[10%] py-2">
                         {user.emailVerified ? (
-                          <span className="text-green-600 font-medium">Yes</span>
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
+                            Verified
+                          </Badge>
                         ) : (
-                          <span className="text-muted-foreground">No</span>
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50">
+                            Pending
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="w-[10%] py-2">
                         {user.banned ? (
-                          <span className="text-destructive font-bold">Yes</span>
+                          <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-transparent shadow-none">
+                            Banned
+                          </Badge>
                         ) : (
-                          <span className="text-muted-foreground">No</span>
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-transparent shadow-none">
+                            Active
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="w-[20%] py-2">{formatDate(user.createdAt)}</TableCell>

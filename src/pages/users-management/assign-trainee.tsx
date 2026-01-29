@@ -57,6 +57,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  emailVerified: boolean;
   traineeId: string | null;
   traineeName: string | null;
   traineeEmail: string | null;
@@ -256,16 +257,17 @@ export default function AssignTraineePage() {
             <table className="w-full caption-bottom text-sm border-collapse table-fixed">
               <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[30%] bg-background py-2">Individual Learner</TableHead>
-                  <TableHead className="w-[30%] bg-background py-2">Assigned Trainee</TableHead>
+                  <TableHead className="w-[25%] bg-background py-2">Individual Learner</TableHead>
+                  <TableHead className="w-[15%] bg-background py-2">Email Verified</TableHead>
+                  <TableHead className="w-[25%] bg-background py-2">Assigned Trainee</TableHead>
                   <TableHead className="w-[20%] bg-background py-2">Status</TableHead>
-                  <TableHead className="w-[20%] bg-background py-2 text-right">Actions</TableHead>
+                  <TableHead className="w-[15%] bg-background py-2 text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paddingTop > 0 && (
                   <TableRow style={{ height: `${paddingTop}px` }}>
-                    <TableCell colSpan={4} />
+                    <TableCell colSpan={5} />
                   </TableRow>
                 )}
                 {virtualItems.map((virtualItem) => {
@@ -280,13 +282,24 @@ export default function AssignTraineePage() {
                       className={`w-full cursor-pointer hover:bg-muted/50 ${isSelected ? "bg-muted/50" : ""}`}
                       onClick={() => handleRowClick(user.id)}
                     >
-                      <TableCell className="w-[30%] py-2">
+                      <TableCell className="w-[25%] py-2">
                         <div className="flex flex-col truncate">
                           <span className="font-medium">{user.name}</span>
                           <span className="text-xs text-muted-foreground">{user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="w-[30%] py-2">
+                      <TableCell className="w-[15%] py-2">
+                        {user.emailVerified ? (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50">
+                            Pending
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-[25%] py-2">
                         <div className="flex flex-col truncate">
                           {isAssigned ? (
                             <>
@@ -305,12 +318,12 @@ export default function AssignTraineePage() {
                             Assigned
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-muted-foreground border-dashed">
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground hover:bg-muted shadow-none">
                             Unassigned
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="w-[20%] py-2 text-right">
+                      <TableCell className="w-[15%] py-2 text-right">
                         <div className="flex justify-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -340,7 +353,7 @@ export default function AssignTraineePage() {
                 })}
                 {paddingBottom > 0 && (
                   <TableRow style={{ height: `${paddingBottom}px` }}>
-                    <TableCell colSpan={4} />
+                    <TableCell colSpan={5} />
                   </TableRow>
                 )}
               </TableBody>
