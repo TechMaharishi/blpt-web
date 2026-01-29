@@ -1,56 +1,15 @@
-import { useState, useRef, useEffect, useMemo } from "react"
-import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useVirtualizer } from "@tanstack/react-virtual"
-import {
-  ChevronDown,
-  MoreHorizontal,
-  Plus,
-  Download,
-  Trash2,
-  Search,
-  CheckCircle2,
-  ShieldAlert,
-  Loader2,
-  Filter,
-  X,
-  ArrowUpDown
-} from "lucide-react"
+import { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { toast } from "sonner";
+import { 
+  Loader2, Trash2, Plus, MoreHorizontal, Copy, Edit, Shield, Ban, Lock, CheckCircle, 
+  Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter 
+} from "lucide-react";
+import { apiClient } from "@/lib/api";
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { apiClient } from "@/lib/api"
-import { toast } from "sonner"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -58,605 +17,869 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-// API Data Type
-export type User = {
-  id: string
-  name: string
-  email: string
-  role: string
-  accountType: string
-  emailVerified: boolean
-  banned: boolean
-  createdAt: string
-  updatedAt: string
-  traineeName: string | null
-  phone?: string
-  avatarUrl?: string
+// --- Types ---
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "trainer" | "trainee" | "user";
+  accountType: string;
+  emailVerified: boolean;
+  banned: boolean;
+  createdAt: string;
+  phone?: string;
 }
 
-type UsersResponse = {
+interface UsersResponse {
   data: {
-    users: User[]
-    total: number
-    limit: number
-  }
-}
-
-const roleMap: Record<string, string> = {
-  admin: "Super Admin",
-  trainer: "Training Admin",
-  trainee: "Clinical Learners",
-  user: "Individual Learners",
-}
-
-// Helper for debouncing
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
+    users: User[];
+    meta: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
     };
-  }, [value, delay]);
-  return debouncedValue;
+  };
 }
+
+interface FetchUsersParams {
+  role?: string;
+  search?: string;
+  field?: "name" | "email";
+  sortBy?: string;
+  sortDirection?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+// --- API ---
+
+const fetchUsers = async (params: FetchUsersParams) => {
+  // Filter out undefined/null/empty values to keep URL clean
+  const queryParams: Record<string, any> = {};
+  if (params.role && params.role !== "all") queryParams.role = params.role;
+  if (params.search) queryParams.search = params.search;
+  if (params.field) queryParams.field = params.field;
+  if (params.sortBy) queryParams.sortBy = params.sortBy;
+  if (params.sortDirection) queryParams.sortDirection = params.sortDirection;
+  if (params.page) queryParams.page = params.page;
+  if (params.limit) queryParams.limit = params.limit;
+
+  const response = await apiClient.get<UsersResponse>("/admin/list-user", { params: queryParams });
+  return response.data;
+};
+
+const deleteUser = async (userId: string) => {
+  const response = await apiClient.post("/admin/delete-user", { userId });
+  return response.data;
+};
+
+const banUser = async (userId: string) => {
+  const response = await apiClient.post("/admin/ban-user", { userId });
+  return response.data;
+};
+
+const unbanUser = async (userId: string) => {
+  const response = await apiClient.post("/admin/unban-user", { userId });
+  return response.data;
+};
+
+const updateUser = async (payload: { userId: string; data: Partial<User> }) => {
+  const response = await apiClient.post("/admin/update-user", payload);
+  return response.data;
+};
+
+const setUserRole = async (payload: { userId: string; role: string }) => {
+  const response = await apiClient.post("/admin/set-user-role", payload);
+  return response.data;
+};
+
+const resetUserPassword = async (payload: { userId: string; newPassword: string }) => {
+  const response = await apiClient.post("/admin/reset-user-password", payload);
+  return response.data;
+};
+
+// --- Helpers ---
+
+const formatDate = (dateString: string) => {
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(dateString));
+};
+
+const getRoleBadge = (role: string) => {
+  switch (role) {
+    case "admin":
+      return <Badge className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border-transparent shadow-none">Super Admin</Badge>;
+    case "trainer":
+      return <Badge className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-transparent shadow-none">Training Admin</Badge>;
+    case "trainee":
+      return <Badge className="bg-sky-100 hover:bg-sky-200 text-sky-800 border-transparent shadow-none">Clinical Learner</Badge>;
+    case "user":
+      return <Badge className="bg-slate-100 hover:bg-slate-200 text-slate-800 border-transparent shadow-none">Individual Learner</Badge>;
+    default:
+      return <Badge variant="outline">{role}</Badge>;
+  }
+};
 
 export default function AllUsersPage() {
-  const queryClient = useQueryClient()
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // Edit User State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  
+  // Role Change State
+  const [isRoleOpen, setIsRoleOpen] = useState(false);
+  const [roleUser, setRoleUser] = useState<User | null>(null);
+  const [newRole, setNewRole] = useState<string>("");
+  
+  // Password Reset State
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
+  const [passwordResetUser, setPasswordResetUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+
+  // Filter, Sort & Pagination State
+  const [search, setSearch] = useState("");
+  const [searchField, setSearchField] = useState<"name" | "email">("name");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  // Query
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["users", page, limit, search, searchField, roleFilter, sortBy, sortDirection],
+    queryFn: () => fetchUsers({
+      page,
+      limit,
+      search: search || undefined,
+      field: searchField,
+      role: roleFilter,
+      sortBy,
+      sortDirection,
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const users = data?.data.users || [];
+  const meta = data?.data.meta;
 
   // Mutations
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiClient.post("/admin/delete-user", { userId })
-    },
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
     onSuccess: () => {
-      toast.success("User deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-      setDeleteDialogOpen(false)
-      setUserToDelete(null)
-      setRowSelection({})
+      toast.success("User deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setSelectedUserId(null);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete user")
-    }
-  })
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to delete user");
+    },
+  });
 
-  const banUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiClient.post("/admin/ban-user", { userId })
-    },
+  const banMutation = useMutation({
+    mutationFn: banUser,
     onSuccess: () => {
-      toast.success("User banned successfully")
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("User banned successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to ban user")
-    }
-  })
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to ban user");
+    },
+  });
 
-  const unbanUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiClient.post("/admin/unban-user", { userId })
-    },
+  const unbanMutation = useMutation({
+    mutationFn: unbanUser,
     onSuccess: () => {
-      toast.success("User unbanned successfully")
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("User unbanned successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to unban user")
-    }
-  })
-
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
-
-  // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchField, setSearchField] = useState<"name" | "email">("name")
-  const [roleFilter, setRoleFilter] = useState<string | null>(null)
-
-  // Sorting State
-  const [sortBy, setSortBy] = useState<"createdAt" | "name" | "email">("createdAt")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-
-  const debouncedSearch = useDebounce(searchQuery, 500)
-
-  const parentRef = useRef<HTMLDivElement>(null)
-
-  // Data Fetching with Infinite Query
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = useInfiniteQuery({
-    queryKey: ["users", roleFilter, debouncedSearch, searchField, sortBy, sortDirection],
-    queryFn: async ({ pageParam = 0 }) => {
-      const params: any = {
-        limit: 10,
-        offset: pageParam,
-        sortBy,
-        sortDirection,
-      }
-
-      if (roleFilter && roleFilter !== "all") {
-        params.role = roleFilter
-      }
-
-      if (debouncedSearch) {
-        params.search = debouncedSearch
-        params.field = searchField
-      }
-
-      const response = await apiClient.get<UsersResponse>("/admin/list-user", {
-        params,
-      })
-      return response.data.data
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to unban user");
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      const nextOffset = allPages.length * 10
-      return nextOffset < lastPage.total ? nextOffset : undefined
-    },
-  })
+  });
 
-  // Flatten data
-  const flatUsers = useMemo(
-    () => data?.pages.flatMap((page) => page.users) ?? [],
-    [data]
-  )
+  const updateMutation = useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => {
+      toast.success("User updated successfully");
+      setIsEditOpen(false);
+      setEditingUser(null);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update user");
+    },
+  });
 
-  const totalDBRows = data?.pages[0]?.total ?? 0
+  const roleMutation = useMutation({
+    mutationFn: setUserRole,
+    onSuccess: () => {
+      toast.success("User role updated successfully");
+      setIsRoleOpen(false);
+      setRoleUser(null);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update user role");
+    },
+  });
 
-  const columns: ColumnDef<User>[] = [
-    {
-      accessorKey: "name",
-      header: "User",
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <div className="flex items-center gap-3">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
-            />
-            <div className="flex flex-col">
-              <span className="font-medium text-sm">{user.name}</span>
-              <span className="text-xs text-muted-foreground">{user.email}</span>
-            </div>
-          </div>
-        )
-      },
+  const passwordResetMutation = useMutation({
+    mutationFn: resetUserPassword,
+    onSuccess: () => {
+      toast.success("Password reset successfully");
+      setIsPasswordResetOpen(false);
+      setPasswordResetUser(null);
+      setNewPassword("");
     },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => {
-        const role = row.getValue("role") as string
-        const displayRole = roleMap[role] || role
-        const getRoleBadge = (role: string) => {
-          switch (role) {
-            case "admin": return <Badge variant="default" className="bg-purple-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200">{displayRole}</Badge>
-            case "trainer": return <Badge variant="default" className="bg-blue-500/15 text-blue-700 hover:bg-blue-500/25 border-blue-200">{displayRole}</Badge>
-            case "trainee": return <Badge variant="secondary" className="bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200">{displayRole}</Badge>
-            default: return <Badge variant="outline" className="text-muted-foreground">{displayRole}</Badge>
-          }
-        }
-        return getRoleBadge(role)
-      },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to reset password");
     },
-    {
-      accessorKey: "accountType",
-      header: "Account",
-      cell: ({ row }) => {
-        const type = row.getValue("accountType") as string
-        return <span className="capitalize text-sm text-muted-foreground">{type}</span>
-      },
-    },
-    {
-      accessorKey: "emailVerified",
-      header: "Verified",
-      cell: ({ row }) => {
-        const isVerified = row.getValue("emailVerified")
-        return isVerified ? (
-          <div className="flex items-center gap-1.5 text-green-600">
-            <CheckCircle2 className="h-4 w-4" />
-            <span className="text-xs font-medium">Verified</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 text-amber-600">
-            <ShieldAlert className="h-4 w-4" />
-            <span className="text-xs font-medium">Pending</span>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "banned",
-      header: "Status",
-      cell: ({ row }) => {
-        const isBanned = row.getValue("banned")
-        return isBanned ? (
-          <Badge variant="destructive" className="h-5 text-[10px] px-1.5">Banned</Badge>
-        ) : (
-          <Badge variant="outline" className="h-5 text-[10px] px-1.5 border-green-200 text-green-700 bg-green-50">Active</Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: () => (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            if (sortBy === "createdAt") {
-              setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-            } else {
-              setSortBy("createdAt")
-              setSortDirection("asc")
-            }
-          }}
-          className="p-0 hover:bg-transparent font-semibold text-gray-700"
-        >
-          Joined
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-sm text-muted-foreground">{new Date(row.getValue("createdAt")).toLocaleDateString()}</div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(user.id)}
-                >
-                  Copy User ID
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Edit User</DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (user.banned) {
-                      unbanUserMutation.mutate(user.id)
-                    } else {
-                      banUserMutation.mutate(user.id)
-                    }
-                  }}
-                >
-                  {user.banned ? "Unban User" : "Ban User"}
-                </DropdownMenuItem>
+  });
 
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )
-      },
-    },
-  ]
-
-  const table = useReactTable({
-    data: flatUsers,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    enableMultiRowSelection: false,
-    manualPagination: true,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-  })
-
-  // Virtualization
-  const { rows } = table.getRowModel()
-
+  // Virtualizer
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: users.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 70,
-    overscan: 6,
-  })
+    estimateSize: () => 50, // Reduced row height for compact view
+    overscan: 5,
+  });
 
-  const virtualRows = rowVirtualizer.getVirtualItems()
-  const totalSize = rowVirtualizer.getTotalSize()
-  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start || 0 : 0
-  const paddingBottom = virtualRows.length > 0 ? totalSize - (virtualRows[virtualRows.length - 1].end || 0) : 0
-
-  // Infinite Scroll Trigger
-  useEffect(() => {
-    const [lastItem] = [...virtualRows].reverse()
-
-    if (!lastItem) {
-      return
+  // Handlers
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortDirection("asc");
     }
+  };
 
-    const scrollContainer = parentRef.current
-    if (!scrollContainer) {
-      return
+  const handleSelect = (userId: string) => {
+    if (selectedUserId === userId) {
+      setSelectedUserId(null);
+    } else {
+      setSelectedUserId(userId);
     }
+  };
 
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-    const scrollOffset = scrollHeight - scrollTop - clientHeight
-
-    if (
-      lastItem.index >= flatUsers.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      scrollOffset < 100
-    ) {
-      fetchNextPage()
+  const handleDeleteClick = () => {
+    if (selectedUserId) {
+      setIsDeleteDialogOpen(true);
     }
-  }, [hasNextPage, fetchNextPage, flatUsers.length, isFetchingNextPage, virtualRows])
+  };
+
+  const confirmDelete = () => {
+    if (selectedUserId) {
+      deleteMutation.mutate(selectedUserId);
+    }
+  };
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    toast.success("User ID copied to clipboard");
+  };
+
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
+    setIsEditOpen(true);
+  };
+
+  const handleRoleClick = (user: User) => {
+    setRoleUser(user);
+    setNewRole(user.role);
+    setIsRoleOpen(true);
+  };
+
+  const handleBanClick = (user: User) => {
+    if (user.banned) {
+      unbanMutation.mutate(user.id);
+    } else {
+      banMutation.mutate(user.id);
+    }
+  };
+
+  const handlePasswordResetClick = (user: User) => {
+    setPasswordResetUser(user);
+    setNewPassword("");
+    setIsPasswordResetOpen(true);
+  };
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    // Construct payload dynamically based on form (simplified here to just name/accountType/phone)
+    // In a real form, we'd gather all inputs.
+    // For this example, we assume editingUser state is updated via inputs
+    updateMutation.mutate({
+      userId: editingUser.id,
+      data: {
+        name: editingUser.name,
+        accountType: editingUser.accountType,
+        phone: editingUser.phone,
+      },
+    });
+  };
+
+  const handleRoleUpdate = () => {
+    if (roleUser && newRole) {
+      roleMutation.mutate({ userId: roleUser.id, role: newRole });
+    }
+  };
+
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordResetUser && newPassword) {
+      passwordResetMutation.mutate({ userId: passwordResetUser.id, newPassword });
+    }
+  };
+
+  const { getVirtualItems, getTotalSize } = rowVirtualizer;
+  const virtualItems = getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? getTotalSize() - virtualItems[virtualItems.length - 1].end
+      : 0;
 
   return (
-    <div className="w-full h-full flex flex-col space-y-4 p-4 md:p-8">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 p-8">
+      {/* Header & Actions */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Users</h2>
+          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground">
-            Manage your users, roles, and account statuses.
+            Manage system users, roles, and account statuses.
           </p>
         </div>
+        
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
           <Button
             variant="destructive"
-            size="sm"
-            className="h-9"
-            disabled={Object.keys(rowSelection).length === 0}
-            onClick={() => {
-              const selectedIndex = Object.keys(rowSelection)[0]
-              if (selectedIndex !== undefined) {
-                const selectedUser = flatUsers[parseInt(selectedIndex)]
-                if (selectedUser) {
-                  setUserToDelete(selectedUser)
-                  setDeleteDialogOpen(true)
-                }
-              }
-            }}
+            disabled={!selectedUserId}
+            onClick={handleDeleteClick}
+            className="w-[100px]"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete ({Object.keys(rowSelection).length})
+            Delete
           </Button>
-          <Button size="sm" className="h-9">
+          <Button className="w-[120px]">
             <Plus className="mr-2 h-4 w-4" />
             Add User
           </Button>
         </div>
       </div>
 
-      {/* Filters & Table */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-2 w-full max-w-2xl">
-            {/* Search Input Group */}
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={`Search by ${searchField}...`}
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="pl-8"
-              />
-            </div>
-
-            {/* Field Selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  Search In: <span className="ml-1 font-medium capitalize">{searchField}</span> <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuRadioGroup value={searchField} onValueChange={(v) => setSearchField(v as "name" | "email")}>
-                  <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="email">Email</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Role Filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className={roleFilter && roleFilter !== "all" ? "bg-secondary" : "w-full sm:w-auto"}>
-                  <Filter className="mr-2 h-4 w-4" />
-                  {roleFilter && roleFilter !== "all" ? roleMap[roleFilter] : "All Roles"}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Filter by Role</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={roleFilter || "all"} onValueChange={(v) => setRoleFilter(v)}>
-                  <DropdownMenuRadioItem value="all">All Roles</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="admin">Super Admin</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="trainer">Training Admin</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="trainee">Clinical Learners</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user">Individual Learners</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Reset Filters */}
-            {(searchQuery || (roleFilter && roleFilter !== "all")) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("")
-                  setRoleFilter("all")
-                  setSearchField("name")
-                }}
-                className="px-2"
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Reset</span>
-              </Button>
-            )}
+      {/* Filters & Search */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-8"
+            />
           </div>
+          <Select
+            value={searchField}
+            onValueChange={(val: "name" | "email") => {
+              setSearchField(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Field" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={roleFilter}
+            onValueChange={(val) => {
+              setRoleFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[150px]">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <SelectValue placeholder="Role" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="admin">Super Admin</SelectItem>
+              <SelectItem value="trainer">Training Admin</SelectItem>
+              <SelectItem value="trainee">Clinical Learner</SelectItem>
+              <SelectItem value="user">Individual Learner</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
 
+      {/* Table Container */}
+      <div className="rounded-md border bg-background overflow-hidden">
         <div
           ref={parentRef}
-          className="rounded-md border border-gray-200 bg-white shadow-sm overflow-auto"
-          style={{ maxHeight: 'calc(80vh - 200px)' }}
+          className="max-h-[500px] overflow-auto relative w-full"
         >
-          {isLoading && !flatUsers.length ? (
-            <div className="h-24 flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : isError ? (
-            <div className="h-24 flex items-center justify-center text-red-500">
-              Error loading users: {error instanceof Error ? error.message : "Unknown error"}
+            <div className="flex h-40 items-center justify-center text-destructive">
+              Error loading users: {(error as any).message}
+            </div>
+          ) : users.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-muted-foreground">
+              No users found.
             </div>
           ) : (
-            <Table className="border-collapse border-spacing-0 w-full relative">
-              <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-gray-200">
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id} className="border-r border-gray-200 font-semibold text-gray-700 h-12 last:border-r-0">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                ))}
+            <table className="w-full caption-bottom text-sm border-collapse table-fixed">
+              <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[50px] bg-background py-2">
+                    {/* Empty header for checkbox column */}
+                  </TableHead>
+                  <TableHead 
+                    className="w-[25%] bg-background py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center gap-1">
+                      User Details
+                      {sortBy === "name" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </TableHead>
+                  <TableHead className="w-[15%] bg-background py-2">Role</TableHead>
+                  <TableHead className="w-[15%] bg-background py-2">Account Type</TableHead>
+                  <TableHead className="w-[10%] bg-background py-2">Verified</TableHead>
+                  <TableHead className="w-[10%] bg-background py-2">Banned</TableHead>
+                  <TableHead 
+                    className="w-[20%] bg-background py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleSort("createdAt")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Created At
+                      {sortBy === "createdAt" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </TableHead>
+                  <TableHead className="w-[50px] bg-background py-2"></TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Top Spacer */}
                 {paddingTop > 0 && (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} style={{ height: `${paddingTop}px`, padding: 0 }} />
+                  <TableRow style={{ height: `${paddingTop}px` }}>
+                    <TableCell colSpan={8} />
                   </TableRow>
                 )}
+                {virtualItems.map((virtualRow) => {
+                  const user = users[virtualRow.index];
+                  const isSelected = selectedUserId === user.id;
 
-                {/* Virtual Rows */}
-                {virtualRows.map((virtualRow) => {
-                  const row = rows[virtualRow.index]
                   return (
                     <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="hover:bg-gray-50/50 border-b border-gray-200 transition-colors"
+                      key={user.id}
+                      data-index={virtualRow.index}
+                      className="w-full"
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="border-r border-gray-200 py-3 last:border-r-0">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                      <TableCell className="w-[50px] py-2">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleSelect(user.id)}
+                          aria-label={`Select ${user.name}`}
+                        />
+                      </TableCell>
+                      <TableCell className="w-[25%] py-2">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {user.email}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-[15%] py-2">{getRoleBadge(user.role)}</TableCell>
+                      <TableCell className="capitalize w-[15%] py-2">
+                        {user.accountType}
+                      </TableCell>
+                      <TableCell className="w-[10%] py-2">
+                        {user.emailVerified ? (
+                          <span className="text-green-600 font-medium">Yes</span>
+                        ) : (
+                          <span className="text-muted-foreground">No</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-[10%] py-2">
+                        {user.banned ? (
+                          <span className="text-destructive font-bold">Yes</span>
+                        ) : (
+                          <span className="text-muted-foreground">No</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-[20%] py-2">{formatDate(user.createdAt)}</TableCell>
+                      <TableCell className="w-[50px] py-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleCopyId(user.id)}>
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copy User ID
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRoleClick(user)}>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Change Role
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleBanClick(user)}>
+                              {user.banned ? (
+                                <>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Unban User
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="mr-2 h-4 w-4" />
+                                  Ban User
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handlePasswordResetClick(user)}
+                            >
+                              <Lock className="mr-2 h-4 w-4" />
+                              Reset Password
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
-
-                {/* Bottom Spacer */}
                 {paddingBottom > 0 && (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} style={{ height: `${paddingBottom}px`, padding: 0 }} />
-                  </TableRow>
-                )}
-
-                {/* Loading Indicator for Infinite Scroll */}
-                {isFetchingNextPage && (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-12 text-center">
-                      <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                    </TableCell>
-                  </TableRow>
-                )}
-
-                {flatUsers.length === 0 && !isLoading && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center border-r border-gray-200 last:border-r-0"
-                    >
-                      No results.
-                    </TableCell>
+                  <TableRow style={{ height: `${paddingBottom}px` }}>
+                    <TableCell colSpan={8} />
                   </TableRow>
                 )}
               </TableBody>
-            </Table>
+            </table>
           )}
         </div>
+      </div>
 
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete the user
-                {userToDelete && <span className="font-medium text-foreground"> {userToDelete.name} </span>}
-                and remove their data from our servers.
-              </DialogDescription>
-            </DialogHeader>
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {meta ? (
+            <>
+              Showing {Math.min((meta.page - 1) * meta.limit + 1, meta.total)} to{" "}
+              {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} users
+            </>
+          ) : (
+            "Loading..."
+          )}
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 mr-4">
+            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <Select
+              value={limit.toString()}
+              onValueChange={(val) => {
+                setLimit(Number(val));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={limit} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!meta?.hasPrev || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <div className="text-sm font-medium">
+            Page {meta?.page || 1} of {meta?.totalPages || 1}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!meta?.hasNext || isLoading}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the user
+              account and remove their data from our servers.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Make changes to the user's profile here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={editingUser.name}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="accountType">Account Type</Label>
+                <Select
+                  value={editingUser.accountType}
+                  onValueChange={(value) =>
+                    setEditingUser({ ...editingUser, accountType: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="develop">Develop</SelectItem>
+                    <SelectItem value="master">Master</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={editingUser.phone || ""}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, phone: e.target.value })
+                  }
+                  placeholder="e.g. 0412 345 678"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditOpen(false)}
+                  disabled={updateMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Change Dialog */}
+      <Dialog open={isRoleOpen} onOpenChange={setIsRoleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change User Role</DialogTitle>
+            <DialogDescription>
+              Select a new role for this user. This will update their permissions immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Super Admin</SelectItem>
+                  <SelectItem value="trainer">Training Admin</SelectItem>
+                  <SelectItem value="trainee">Clinical Learner</SelectItem>
+                  <SelectItem value="user">Individual Learner</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsRoleOpen(false)}
+              disabled={roleMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleRoleUpdate} 
+              disabled={roleMutation.isPending}
+            >
+              {roleMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Update Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={isPasswordResetOpen} onOpenChange={setIsPasswordResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Reset Password</DialogTitle>
+            <DialogDescription>
+              This is a sensitive action. The new password will be set immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordReset} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="Enter new password"
+              />
+            </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPasswordResetOpen(false)}
+                disabled={passwordResetMutation.isPending}
+              >
                 Cancel
               </Button>
-              <Button
+              <Button 
+                type="submit" 
                 variant="destructive"
-                onClick={() => {
-                  if (userToDelete) {
-                    deleteUserMutation.mutate(userToDelete.id)
-                  }
-                }}
-                disabled={deleteUserMutation.isPending}
+                disabled={passwordResetMutation.isPending}
               >
-                {deleteUserMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete"
+                {passwordResetMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
+                Reset Password
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }
+

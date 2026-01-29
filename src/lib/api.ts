@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
 
         // Handle other common errors
         if (error.response?.status === 403) {
-             console.warn("Forbidden access")
+            console.warn("Forbidden access")
         }
 
         if (error.response?.status === 500) {
