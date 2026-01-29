@@ -22,7 +22,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -63,12 +62,6 @@ interface User {
   traineeEmail: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-interface Trainee {
-  id: string;
-  name: string;
-  email: string;
 }
 
 interface AssignTraineePayload {
@@ -215,13 +208,7 @@ export default function AssignTraineePage() {
       ? totalSize - virtualItems[virtualItems.length - 1].end
       : 0;
 
-  // Columns Widths
-  const COL_WIDTHS = {
-    user: "w-[30%]",
-    trainee: "w-[30%]",
-    status: "w-[150px]",
-    actions: "w-[60px]",
-  };
+
 
   return (
     <div className="space-y-6 p-8 h-full flex flex-col">
