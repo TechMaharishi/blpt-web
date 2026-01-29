@@ -40,6 +40,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
@@ -200,6 +208,12 @@ export default function AssignTraineePage() {
   };
 
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const totalSize = rowVirtualizer.getTotalSize();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? totalSize - virtualItems[virtualItems.length - 1].end
+      : 0;
 
   // Columns Widths
   const COL_WIDTHS = {
@@ -233,111 +247,117 @@ export default function AssignTraineePage() {
       </div>
 
       {/* Table Container */}
-      <div className="rounded-md border bg-background flex-1 overflow-hidden flex flex-col min-h-[500px]">
-        {/* Table Header */}
-        <div className="flex items-center border-b bg-muted/50 font-medium text-sm h-10 shrink-0">
-          <div className={`${COL_WIDTHS.user} px-4`}>Individual Learner</div>
-          <div className={`${COL_WIDTHS.trainee} px-4`}>Assigned Trainee</div>
-          <div className={`${COL_WIDTHS.status} px-4`}>Status</div>
-          <div className={`${COL_WIDTHS.actions} px-4 text-right`}>Actions</div>
-        </div>
-
-        {/* Virtual List */}
+      <div className="rounded-md border bg-background overflow-hidden">
         <div
           ref={parentRef}
-          className="overflow-auto flex-1 w-full relative"
+          className="max-h-[500px] overflow-auto relative w-full"
         >
           {isUsersLoading ? (
-            <div className="flex h-full items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex flex-col gap-2 p-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+            <div className="flex h-40 items-center justify-center text-muted-foreground">
               <Users className="h-10 w-10 mb-2 opacity-20" />
               <p>No users found</p>
             </div>
           ) : (
-            <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                width: "100%",
-                position: "relative",
-              }}
-            >
-              {virtualItems.map((virtualItem) => {
-                const user = users[virtualItem.index];
-                const isSelected = selectedUserId === user.id;
-                const isAssigned = !!user.traineeId;
+            <table className="w-full caption-bottom text-sm border-collapse table-fixed">
+              <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[30%] bg-background py-2">Individual Learner</TableHead>
+                  <TableHead className="w-[30%] bg-background py-2">Assigned Trainee</TableHead>
+                  <TableHead className="w-[20%] bg-background py-2">Status</TableHead>
+                  <TableHead className="w-[20%] bg-background py-2 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paddingTop > 0 && (
+                  <TableRow style={{ height: `${paddingTop}px` }}>
+                    <TableCell colSpan={4} />
+                  </TableRow>
+                )}
+                {virtualItems.map((virtualItem) => {
+                  const user = users[virtualItem.index];
+                  const isSelected = selectedUserId === user.id;
+                  const isAssigned = !!user.traineeId;
 
-                return (
-                  <div
-                    key={user.id}
-                    className={`absolute top-0 left-0 w-full flex items-center border-b text-sm transition-colors hover:bg-muted/30 ${
-                      isSelected ? "bg-muted/50" : ""
-                    }`}
-                    style={{
-                      height: `${virtualItem.size}px`,
-                      transform: `translateY(${virtualItem.start}px)`,
-                    }}
-                    onClick={() => handleRowClick(user.id)}
-                  >
-                    
-                    <div className={`${COL_WIDTHS.user} px-4 truncate`}>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
-                    </div>
-
-                    <div className={`${COL_WIDTHS.trainee} px-4 truncate`}>
-                      {isAssigned ? (
-                        <>
-                          <div className="font-medium">{user.traineeName}</div>
-                          <div className="text-xs text-muted-foreground">{user.traineeEmail}</div>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground italic">Not Assigned</span>
-                      )}
-                    </div>
-
-                    <div className={`${COL_WIDTHS.status} px-4`}>
-                      {isAssigned ? (
-                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 shadow-none border-transparent">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Assigned
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground border-dashed">
-                          Unassigned
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className={`${COL_WIDTHS.actions} px-4 flex justify-end`}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => openAssignDialog(user)}>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            {isAssigned ? "Change Trainee" : "Assign Trainee"}
-                          </DropdownMenuItem>
-                          {isAssigned && (
-                            <DropdownMenuItem onClick={() => openViewDialog(user)}>
-                              <UserIcon className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
+                  return (
+                    <TableRow
+                      key={user.id}
+                      data-index={virtualItem.index}
+                      className={`w-full cursor-pointer hover:bg-muted/50 ${isSelected ? "bg-muted/50" : ""}`}
+                      onClick={() => handleRowClick(user.id)}
+                    >
+                      <TableCell className="w-[30%] py-2">
+                        <div className="flex flex-col truncate">
+                          <span className="font-medium">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-[30%] py-2">
+                        <div className="flex flex-col truncate">
+                          {isAssigned ? (
+                            <>
+                              <span className="font-medium">{user.traineeName}</span>
+                              <span className="text-xs text-muted-foreground">{user.traineeEmail}</span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground italic">Not Assigned</span>
                           )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-[20%] py-2">
+                        {isAssigned ? (
+                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 shadow-none border-transparent">
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                            Assigned
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground border-dashed">
+                            Unassigned
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-[20%] py-2 text-right">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openAssignDialog(user); }}>
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                {isAssigned ? "Change Trainee" : "Assign Trainee"}
+                              </DropdownMenuItem>
+                              {isAssigned && (
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openViewDialog(user); }}>
+                                  <UserIcon className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {paddingBottom > 0 && (
+                  <TableRow style={{ height: `${paddingBottom}px` }}>
+                    <TableCell colSpan={4} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </table>
           )}
         </div>
       </div>
