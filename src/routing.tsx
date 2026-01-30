@@ -17,6 +17,7 @@ const TicketTypesPage = lazy(() => import("@/pages/ticket-management/ticket-type
 const AllTicketsPage = lazy(() => import("@/pages/ticket-management/all-ticket"));
 const AllUsersPage = lazy(() => import("@/pages/users-management/all-users"));
 const AssignTraineePage = lazy(() => import("@/pages/users-management/assign-trainee"));
+const VideoTagsPage = lazy(() => import("@/pages/content-management/video-tags"));
 
 
 function AppError() {
@@ -116,7 +117,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "tags",
-                        element: <PlaceholderPage />,
+                        element: <VideoTagsPage />,
                     },
                 ]
             },
