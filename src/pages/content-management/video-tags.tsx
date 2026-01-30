@@ -221,9 +221,11 @@ export default function VideoTagsPage() {
         {isLoading ? (
              <div className="p-4 space-y-4">
                {Array.from({ length: 5 }).map((_, i) => (
-                 <div key={i} className="flex items-center justify-between">
-                   <Skeleton className="h-8 w-[200px]" />
-                   <Skeleton className="h-8 w-[100px]" />
+                 <div key={i} className="flex items-center gap-4">
+                   <Skeleton className="h-4 w-4" />
+                   <Skeleton className="h-4 flex-1" />
+                   <Skeleton className="h-4 flex-1" />
+                   <Skeleton className="h-4 flex-1" />
                  </div>
                ))}
              </div>
