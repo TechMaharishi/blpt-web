@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { cn } from "@/lib/utils"
+import { cn, getRolePath } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -50,7 +50,8 @@ function LoginForm({
         },
         onSuccess: (data) => {
             console.log("Sign in successful", data)
-            navigate("/app/dashboard")
+            const rolePath = data.user ? getRolePath((data.user as any).role || "user") : "app";
+            navigate(`/${rolePath}/dashboard`)
         },
         onError: (err: any) => {
             console.log("Sign in error", err)

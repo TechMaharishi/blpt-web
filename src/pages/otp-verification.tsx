@@ -50,7 +50,7 @@ export function OTPVerificationPage() {
         },
         onSuccess: (result) => {
             if (result.type === "email-verification") {
-                navigate("/app/dashboard")
+                navigate("/login")
             } else if (result.type === "forget-password") {
                 navigate(`/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`)
             }

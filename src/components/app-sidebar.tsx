@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/collapsible"
 import { NavUser } from "./nav-user"
 
+import { getRolePath } from "@/lib/utils"
+
 type MenuItem = {
     title: string
     url?: string
@@ -40,38 +42,38 @@ type MenuItem = {
     items?: MenuItem[]
 }
 
-const items: MenuItem[] = [
+const getMenuItems = (rolePath: string): MenuItem[] => [
     {
         title: "Dashboard",
-        url: "/app/dashboard",
+        url: `/${rolePath}/dashboard`,
         icon: Home,
     },
     {
         title: "Content Management",
         icon: Library,
         items: [
-            { title: "Short Videos", url: "/app/content/shorts" },
-            { title: "Courses", url: "/app/content/courses" },
+            { title: "Short Videos", url: `/${rolePath}/content/shorts` },
+            { title: "Courses", url: `/${rolePath}/content/courses` },
             {
                 title: "Reviews",
                 items: [
-                    { title: "Pending Shorts", url: "/app/content/reviews/shorts" },
-                    { title: "Pending Courses", url: "/app/content/reviews/courses" },
+                    { title: "Pending Shorts", url: `/${rolePath}/content/reviews/shorts` },
+                    { title: "Pending Courses", url: `/${rolePath}/content/reviews/courses` },
                 ]
             },
-            { title: "Video Tags", url: "/app/content/tags" },
+            { title: "Video Tags", url: `/${rolePath}/content/tags` },
         ]
     },
     {
         title: "User Management",
         icon: Users,
         items: [
-            { title: "All Users", url: "/app/users/all" },
+            { title: "All Users", url: `/${rolePath}/users/all` },
             {
                 title: "Assignments",
                 items: [
-                    { title: "Assign Courses", url: "/app/users/assignments/courses" },
-                    { title: "Assign Clinical Learner", url: "/app/users/assignments/clinical" },
+                    { title: "Assign Courses", url: `/${rolePath}/users/assignments/courses` },
+                    { title: "Assign Clinical Learner", url: `/${rolePath}/users/assignments/clinical` },
                 ]
             }
         ]
@@ -80,9 +82,9 @@ const items: MenuItem[] = [
         title: "Ticket Management",
         icon: Ticket,
         items: [
-            { title: "All Tickets", url: "/app/tickets/all" },
-            { title: "Create Ticket", url: "/app/tickets/create" },
-            { title: "Ticket Types", url: "/app/tickets/types" },
+            { title: "All Tickets", url: `/${rolePath}/tickets/all` },
+            { title: "Create Ticket", url: `/${rolePath}/tickets/create` },
+            { title: "Ticket Types", url: `/${rolePath}/tickets/types` },
         ]
     }
 ]
@@ -96,10 +98,13 @@ export function AppSidebar() {
         avatar: session?.user?.image || "",
     }
 
+    const rolePath = session?.user ? getRolePath((session.user as any).role || "user") : "app";
+    const items = getMenuItems(rolePath);
+
     return (
         <Sidebar>
             <SidebarHeader className="flex items-center justify-center border-b border-sidebar-border p-2">
-                <Link to="/app/dashboard">
+                <Link to={`/${rolePath}/dashboard`}>
                     <img src={logo} alt="Beyond Limit Logo" className="h-24 w-32" />
                 </Link>
             </SidebarHeader>

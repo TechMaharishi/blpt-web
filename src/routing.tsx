@@ -75,10 +75,10 @@ const router = createBrowserRouter([
     },
     {
         path: "/",
-        element: <Navigate to="/app/dashboard" />,
+        element: <Navigate to="/login" />,
     },
     {
-        path: "/app",
+        path: "/:rolePath",
         errorElement: <AppError />,
         element: (
             <ProtectedRoute>
