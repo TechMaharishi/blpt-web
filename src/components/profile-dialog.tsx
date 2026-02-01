@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { apiClient } from "@/lib/api"
 import { authClient } from "@/lib/auth-client"
+import { toast } from "sonner"
 import {
     Dialog,
     DialogContent,
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Upload, Trash2, CheckCircle2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+
 
 interface ProfileDialogProps {
     open: boolean
@@ -41,11 +42,18 @@ const roleMap = {
     user: "Individual Learners",
 }
 
+/**
+ * ProfileDialog Component
+ * 
+ * Allows users to view and update their profile information including:
+ * - Profile picture (upload/remove)
+ * - Basic details (Name, Phone)
+ * - Read-only fields (Email, Role, Verification status)
+ */
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [name, setName] = useState("")
     const [phone, setPhone] = useState("")
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
     const { data: session, isPending: isLoading, refetch: refetchSession } = authClient.useSession()
     const userData = session?.user as unknown as UserData | undefined
@@ -64,11 +72,10 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         },
         onSuccess: () => {
             refetchSession()
-            setMessage({ type: 'success', text: "Profile information updated successfully." })
-            setTimeout(() => setMessage(null), 3000)
+            toast.success("Profile information updated successfully.")
         },
         onError: (error: any) => {
-             setMessage({ type: 'error', text: error.response?.data?.message || "Failed to update profile." })
+             toast.error(error.response?.data?.message || "Failed to update profile.")
         },
     })
 
@@ -85,11 +92,10 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         },
         onSuccess: () => {
             refetchSession()
-            setMessage({ type: 'success', text: "Profile photo updated successfully." })
-            setTimeout(() => setMessage(null), 3000)
+            toast.success("Profile photo updated successfully.")
         },
         onError: (error: any) => {
-             setMessage({ type: 'error', text: error.response?.data?.message || "Failed to upload photo." })
+             toast.error(error.response?.data?.message || "Failed to upload photo.")
         },
     })
 
@@ -100,11 +106,10 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         },
         onSuccess: () => {
             refetchSession()
-            setMessage({ type: 'success', text: "Profile photo removed." })
-            setTimeout(() => setMessage(null), 3000)
+            toast.success("Profile photo removed.")
         },
         onError: (error: any) => {
-            setMessage({ type: 'error', text: error.response?.data?.message || "Failed to remove photo." })
+            toast.error(error.response?.data?.message || "Failed to remove photo.")
         },
     })
 
@@ -113,7 +118,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         if (file) {
             // Check file size (50MB)
             if (file.size > 50 * 1024 * 1024) {
-                setMessage({ type: 'error', text: "File size exceeds 50MB limit." })
+                toast.error("File size exceeds 50MB limit.")
                 if (fileInputRef.current) {
                     fileInputRef.current.value = ""
                 }
@@ -124,12 +129,6 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     }
 
     const handleSave = () => {
-        // Basic phone validation for Australia (very loose regex or just check length/format if needed)
-        // User note: "The Phone number will only be from Australia so follow its format."
-        // Australian mobile numbers: 04XX XXX XXX or +61 4XX XXX XXX. Landlines: 0X XXXX XXXX.
-        // Let's rely on backend validation or simple regex.
-        // Regex for AU phone: ^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$ (Approximate)
-        
         updateInfoMutation.mutate({ name, phone })
     }
 
@@ -247,15 +246,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                             </div>
                         </div>
 
-                        {/* Feedback Message */}
-                        {message && (
-                            <div className={cn(
-                                "text-sm p-3 rounded-md",
-                                message.type === 'success' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                            )}>
-                                {message.text}
-                            </div>
-                        )}
+
                     </div>
                 )}
 

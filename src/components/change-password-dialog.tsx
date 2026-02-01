@@ -12,14 +12,24 @@ import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useMutation } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 interface ChangePasswordDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+/**
+ * ChangePasswordDialog Component
+ * 
+ * Allows users to securely update their account password.
+ * Features:
+ * - Validates current password (via API)
+ * - Enforces password requirements (min 8 chars)
+ * - Ensures new password and confirmation match
+ * - Revokes other active sessions upon successful change for security
+ */
 export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
@@ -27,9 +37,8 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [validationError, setValidationError] = useState<string | null>(null)
 
-  const { mutate: changePassword, isPending, error, isSuccess, reset } = useMutation({
+  const { mutate: changePassword, isPending } = useMutation({
     mutationFn: async () => {
       const { data, error } = await authClient.changePassword({
         newPassword,
@@ -43,26 +52,24 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
-      // Optional: Close dialog after a delay
-      setTimeout(() => {
-        onOpenChange(false)
-        reset()
-      }, 2000)
+      toast.success("Password changed successfully!")
+      onOpenChange(false)
     },
+    onError: (error: any) => {
+        toast.error(error.message || "Failed to change password")
+    }
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setValidationError(null)
-    reset()
 
     if (newPassword !== confirmPassword) {
-      setValidationError("New passwords do not match")
+      toast.error("New passwords do not match")
       return
     }
 
     if (newPassword.length < 8) {
-      setValidationError("Password must be at least 8 characters long")
+      toast.error("Password must be at least 8 characters long")
       return
     }
 
@@ -80,18 +87,6 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {(validationError || error) && (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  {validationError || (error as any)?.message || "An error occurred"}
-                </AlertDescription>
-              </Alert>
-            )}
-            {isSuccess && (
-              <Alert className="border-green-500 text-green-600">
-                <AlertDescription>Password changed successfully!</AlertDescription>
-              </Alert>
-            )}
             <div className="grid gap-2">
               <Label htmlFor="current-password">Current Password</Label>
               <div className="relative">

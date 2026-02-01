@@ -18,6 +18,9 @@ const AllTicketsPage = lazy(() => import("@/pages/ticket-management/all-ticket")
 const AllUsersPage = lazy(() => import("@/pages/users-management/all-users"));
 const AssignTraineePage = lazy(() => import("@/pages/users-management/assign-trainee"));
 const VideoTagsPage = lazy(() => import("@/pages/content-management/video-tags"));
+const PublishedCoursesPage = lazy(() => import("@/pages/content-management/courses/published-courses").then(m => ({ default: m.PublishedCoursesPage })));
+const PendingCoursesPage = lazy(() => import("@/pages/content-management/courses/pending-course").then(m => ({ default: m.PendingCoursesPage })));
+const DraftCoursesPage = lazy(() => import("@/pages/content-management/courses/draft-course").then(m => ({ default: m.DraftCoursesPage })));
 
 
 function AppError() {
@@ -100,7 +103,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "courses",
-                        element: <PlaceholderPage />,
+                        element: <PublishedCoursesPage />,
                     },
                     {
                         path: "reviews",
@@ -111,7 +114,20 @@ const router = createBrowserRouter([
                             },
                             {
                                 path: "courses",
+                                element: <PendingCoursesPage />,
+                            },
+                        ]
+                    },
+                    {
+                        path: "drafts",
+                        children: [
+                            {
+                                path: "shorts",
                                 element: <PlaceholderPage />,
+                            },
+                            {
+                                path: "courses",
+                                element: <DraftCoursesPage />,
                             },
                         ]
                     },

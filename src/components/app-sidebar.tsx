@@ -61,6 +61,13 @@ const getMenuItems = (rolePath: string): MenuItem[] => [
                     { title: "Pending Courses", url: `/${rolePath}/content/reviews/courses` },
                 ]
             },
+            {
+                title: "Drafts",
+                items: [
+                    { title: "Draft Shorts", url: `/${rolePath}/content/drafts/shorts` },
+                    { title: "Draft Courses", url: `/${rolePath}/content/drafts/courses` },
+                ]
+            },
             { title: "Video Tags", url: `/${rolePath}/content/tags` },
         ]
     },
