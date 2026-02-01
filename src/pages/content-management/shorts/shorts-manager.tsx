@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { toast } from "sonner";
-import { Loader2, Trash2, Search, AlertCircle, ArrowUpDown, ChevronLeft, ChevronRight, Plus, Filter, FileQuestion } from "lucide-react";
+import { Loader2, Trash2, Search, AlertCircle, ArrowUpDown, ChevronLeft, ChevronRight, Plus, Filter } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ interface User {
   email: string;
 }
 
-interface Course {
+interface ShortVideo {
   _id: string;
   title: string;
   description: string;
@@ -51,17 +50,16 @@ interface Course {
   accessLevel: string;
   createdBy: User;
   thumbnailUrl: string;
-  totalDurationSeconds: number;
-  totalQuizzes: number;
-  totalChapters: number;
+  cloudinaryUrl: string;
+  durationSeconds: number;
   createdAt: string;
   updatedAt: string;
 }
 
-interface CoursesResponse {
+interface ShortsResponse {
   success: boolean;
   message: string;
-  data: Course[];
+  data: ShortVideo[];
   meta: {
     page: number;
     offset: number;
@@ -71,7 +69,7 @@ interface CoursesResponse {
   };
 }
 
-interface CoursesManagerProps {
+interface ShortsManagerProps {
   pageTitle: string;
   defaultStatus: string; // "published" | "pending" | "draft"
   allowedStatuses?: string[]; // e.g. ["pending", "rejected"]
@@ -117,7 +115,7 @@ const getStatusBadgeVariant = (status: string) => {
 
 // --- API ---
 
-const fetchCourses = async ({ page, limit, status, search, sortBy, sortOrder }: any) => {
+const fetchShorts = async ({ page, limit, status, search, sortBy, sortOrder }: any) => {
   const params: any = {
     page,
     limit,
@@ -128,22 +126,22 @@ const fetchCourses = async ({ page, limit, status, search, sortBy, sortOrder }: 
   if (sortBy) params.sortBy = sortBy;
   if (sortOrder) params.order = sortOrder;
 
-  const response = await apiClient.get<CoursesResponse>("/courses", { params });
+  const response = await apiClient.get<ShortsResponse>("/short-videos", { params });
   return response.data;
 };
 
-const deleteCourse = async (id: string) => {
-  const response = await apiClient.delete(`/courses/${id}`);
+const deleteShort = async (id: string) => {
+  const response = await apiClient.delete(`/short-videos/${id}`);
   return response.data;
 };
 
-export function CoursesManager({ 
+export function ShortsManager({ 
   pageTitle, 
   defaultStatus, 
   allowedStatuses, 
   showStatusFilter,
   hideAddButton
-}: CoursesManagerProps) {
+}: ShortsManagerProps) {
   // State
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -155,7 +153,7 @@ export function CoursesManager({
   
   // Pagination State
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10); // Default to 10 to match design, can be 20
+  const [limit, setLimit] = useState(10);
 
   // Debounce Search
   useEffect(() => {
@@ -176,8 +174,8 @@ export function CoursesManager({
 
   // Query with Pagination
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["courses", page, limit, status, debouncedSearch, sortBy, sortOrder],
-    queryFn: () => fetchCourses({ 
+    queryKey: ["shorts", page, limit, status, debouncedSearch, sortBy, sortOrder],
+    queryFn: () => fetchShorts({ 
         page, 
         limit, 
         status, 
@@ -188,16 +186,16 @@ export function CoursesManager({
     placeholderData: keepPreviousData,
   });
 
-  const courses = data?.data || [];
+  const shorts = data?.data || [];
   const meta = data?.meta;
   const totalItems = meta?.total || 0;
   const totalPages = Math.ceil(totalItems / limit);
 
   // Virtualizer
   const rowVirtualizer = useVirtualizer({
-    count: courses.length,
+    count: shorts.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 60, // Adjusted for course row height
+    estimateSize: () => 60,
     overscan: 5,
   });
 
@@ -211,15 +209,15 @@ export function CoursesManager({
 
   // Mutations
   const deleteMutation = useMutation({
-    mutationFn: deleteCourse,
+    mutationFn: deleteShort,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
-      toast.success("Course deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["shorts"] });
+      toast.success("Short video deleted successfully");
       setIsDeleteDialogOpen(false);
       setSelectedId(null);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to delete course");
+      toast.error(err.response?.data?.message || "Failed to delete short video");
     },
   });
 
@@ -251,7 +249,7 @@ export function CoursesManager({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
         <p className="text-muted-foreground mt-1">
-          Manage courses
+          Manage short videos
         </p>
       </div>
 
@@ -261,7 +259,7 @@ export function CoursesManager({
              <div className="relative w-full sm:w-72">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search courses..."
+                    placeholder="Search shorts..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8"
@@ -300,7 +298,7 @@ export function CoursesManager({
             {!hideAddButton && (
                 <Button className="w-[140px]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Course
+                    Add Short
                 </Button>
             )}
         </div>
@@ -324,15 +322,15 @@ export function CoursesManager({
                 <div className="flex h-40 items-center justify-center text-destructive">
                     <div className="flex flex-col items-center justify-center gap-2">
                         <AlertCircle className="h-8 w-8" />
-                        <p>Failed to load courses</p>
-                        <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["courses"] })}>
+                        <p>Failed to load shorts</p>
+                        <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["shorts"] })}>
                             Retry
                         </Button>
                     </div>
                 </div>
-             ) : courses.length === 0 ? (
+             ) : shorts.length === 0 ? (
                 <div className="flex h-40 items-center justify-center text-muted-foreground">
-                    No courses found
+                    No shorts found
                 </div>
              ) : (
                 <table className="w-full caption-bottom text-sm border-collapse table-fixed">
@@ -380,38 +378,38 @@ export function CoursesManager({
                             </TableRow>
                         )}
                         {virtualItems.map((virtualRow) => {
-                            const course = courses[virtualRow.index];
+                            const short = shorts[virtualRow.index];
                             return (
                                 <TableRow 
-                                    key={course._id} 
-                                    className={`cursor-pointer hover:bg-muted/50 ${selectedId === course._id ? "bg-muted" : ""}`}
+                                    key={short._id} 
+                                    className={`cursor-pointer hover:bg-muted/50 ${selectedId === short._id ? "bg-muted" : ""}`}
                                     data-index={virtualRow.index}
-                                    onClick={() => handleSelect(course._id)}
+                                    onClick={() => handleSelect(short._id)}
                                 >
                                     <TableCell className="py-2">
                                         <Checkbox 
-                                            checked={selectedId === course._id}
-                                            onCheckedChange={() => handleSelect(course._id)}
+                                            checked={selectedId === short._id}
+                                            onCheckedChange={() => handleSelect(short._id)}
                                             onClick={(e) => e.stopPropagation()}
-                                            aria-label={`Select ${course.title}`}
+                                            aria-label={`Select ${short.title}`}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-medium truncate py-2" title={course.title}>
-                                        {course.title}
+                                    <TableCell className="font-medium truncate py-2" title={short.title}>
+                                        {short.title}
                                     </TableCell>
                                     <TableCell className="py-2">
-                                        <Badge variant={getStatusBadgeVariant(course.status)}>
-                                            {course.status}
+                                        <Badge variant={getStatusBadgeVariant(short.status)}>
+                                            {short.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="py-2">
                                         <Badge variant="outline" className="capitalize">
-                                            {course.accessLevel}
+                                            {short.accessLevel}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="py-2">
                                         <div className="flex flex-col gap-1">
-                                            {course.tags.map(tag => (
+                                            {short.tags.map(tag => (
                                                 <Badge key={tag} variant="secondary" className="text-xs w-fit">
                                                     {tag}
                                                 </Badge>
@@ -419,23 +417,23 @@ export function CoursesManager({
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground py-2">
-                                        {formatDuration(course.totalDurationSeconds)}
+                                        {formatDuration(short.durationSeconds)}
                                     </TableCell>
                                     <TableCell className="py-2">
                                         <div className="flex flex-col">
-                                            <span className="font-medium truncate" title={course.createdBy?.name || "Unknown"}>
-                                                {course.createdBy?.name || "Unknown"}
+                                            <span className="font-medium truncate" title={short.createdBy?.name || "Unknown"}>
+                                                {short.createdBy?.name || "Unknown"}
                                             </span>
-                                            <span className="text-xs text-muted-foreground truncate" title={course.createdBy?.email}>
-                                                {course.createdBy?.email}
+                                            <span className="text-xs text-muted-foreground truncate" title={short.createdBy?.email}>
+                                                {short.createdBy?.email}
                                             </span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground py-2">
-                                        {formatDate(course.createdAt)}
+                                        {formatDate(short.createdAt)}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground py-2">
-                                        {formatDate(course.updatedAt)}
+                                        {formatDate(short.updatedAt)}
                                     </TableCell>
                                 </TableRow>
                             );
@@ -458,10 +456,10 @@ export function CoursesManager({
                 "Loading..."
             ) : totalItems > 0 ? (
                 <>
-                    Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalItems)} of {totalItems} courses
+                    Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalItems)} of {totalItems} shorts
                 </>
             ) : (
-                "Showing 0 to 0 of 0 courses"
+                "Showing 0 to 0 of 0 shorts"
             )}
         </div>
         <div className="flex items-center space-x-2">
@@ -513,9 +511,9 @@ export function CoursesManager({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Delete Course</DialogTitle>
+                <DialogTitle>Delete Short</DialogTitle>
                 <DialogDescription>
-                    Are you sure you want to delete this course? This action cannot be undone.
+                    Are you sure you want to delete this short video? This action cannot be undone.
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>

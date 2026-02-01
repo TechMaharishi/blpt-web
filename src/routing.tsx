@@ -21,6 +21,9 @@ const VideoTagsPage = lazy(() => import("@/pages/content-management/video-tags")
 const PublishedCoursesPage = lazy(() => import("@/pages/content-management/courses/published-courses").then(m => ({ default: m.PublishedCoursesPage })));
 const PendingCoursesPage = lazy(() => import("@/pages/content-management/courses/pending-course").then(m => ({ default: m.PendingCoursesPage })));
 const DraftCoursesPage = lazy(() => import("@/pages/content-management/courses/draft-course").then(m => ({ default: m.DraftCoursesPage })));
+const PublishedShortsPage = lazy(() => import("@/pages/content-management/shorts/published-shorts").then(m => ({ default: m.PublishedShortsPage })));
+const PendingShortsPage = lazy(() => import("@/pages/content-management/shorts/pending-shorts").then(m => ({ default: m.PendingShortsPage })));
+const DraftShortsPage = lazy(() => import("@/pages/content-management/shorts/draft-shorts").then(m => ({ default: m.DraftShortsPage })));
 
 
 function AppError() {
@@ -99,7 +102,7 @@ const router = createBrowserRouter([
                 children: [
                     {
                         path: "shorts",
-                        element: <PlaceholderPage />,
+                        element: <PublishedShortsPage />,
                     },
                     {
                         path: "courses",
@@ -110,7 +113,7 @@ const router = createBrowserRouter([
                         children: [
                             {
                                 path: "shorts",
-                                element: <PlaceholderPage />,
+                                element: <PendingShortsPage />,
                             },
                             {
                                 path: "courses",
@@ -123,7 +126,7 @@ const router = createBrowserRouter([
                         children: [
                             {
                                 path: "shorts",
-                                element: <PlaceholderPage />,
+                                element: <DraftShortsPage />,
                             },
                             {
                                 path: "courses",

@@ -8,6 +8,7 @@ export function PendingCoursesPage() {
         defaultStatus="pending" 
         allowedStatuses={["pending", "rejected"]}
         showStatusFilter={true}
+        hideAddButton={true}
     />
   );
 }
