@@ -243,28 +243,6 @@ export function CoursesManager({
     }
   };
 
-  const isPageEmpty = !isLoading && !isError && totalItems === 0 && !search && (!showStatusFilter || status === defaultStatus);
-
-  const getEmptyMessage = () => {
-    switch (status) {
-        case "published": return "No courses found";
-        case "pending": return "No pending courses";
-        case "draft": return "No draft courses";
-        default: return "No courses found";
-    }
-  };
-
-  const getEmptySubheading = () => {
-    switch (status) {
-        case "published": return "Get started by creating a new course.";
-        case "pending": return "There are no courses currently pending review.";
-        case "draft": return "There are no draft courses available.";
-        default: return "Get started by creating a new course.";
-    }
-  };
-
-  const showEmptyStateAction = status === "published";
-
   return (
     <div className="space-y-6 p-8 h-full flex flex-col overflow-hidden">
       {/* Header */}
@@ -275,26 +253,6 @@ export function CoursesManager({
         </p>
       </div>
 
-      {isPageEmpty ? (
-        <div className="flex flex-col items-center justify-center flex-1 h-full border rounded-md border-dashed p-8 text-center animate-in fade-in-50">
-            {showEmptyStateAction && (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                    <FileQuestion className="h-10 w-10 text-muted-foreground" />
-                </div>
-            )}
-            <h2 className="mt-6 text-xl font-semibold">{getEmptyMessage()}</h2>
-            <p className="mt-2 text-center text-sm leading-6 text-muted-foreground max-w-sm">
-                {getEmptySubheading()}
-            </p>
-            {showEmptyStateAction && (
-                <Button className="mt-6">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Course
-                </Button>
-            )}
-        </div>
-      ) : (
-        <>
       {/* Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center space-x-2">
@@ -422,13 +380,15 @@ export function CoursesManager({
                             return (
                                 <TableRow 
                                     key={course._id} 
-                                    className={selectedId === course._id ? "bg-muted" : ""}
+                                    className={`cursor-pointer hover:bg-muted/50 ${selectedId === course._id ? "bg-muted" : ""}`}
                                     data-index={virtualRow.index}
+                                    onClick={() => handleSelect(course._id)}
                                 >
                                     <TableCell className="py-2">
                                         <Checkbox 
                                             checked={selectedId === course._id}
                                             onCheckedChange={() => handleSelect(course._id)}
+                                            onClick={(e) => e.stopPropagation()}
                                             aria-label={`Select ${course.title}`}
                                         />
                                     </TableCell>
@@ -490,12 +450,14 @@ export function CoursesManager({
       {/* Pagination Controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-            {totalItems > 0 ? (
+            {isLoading ? (
+                "Loading..."
+            ) : totalItems > 0 ? (
                 <>
                     Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalItems)} of {totalItems} courses
                 </>
             ) : (
-                "Loading..."
+                "Showing 0 to 0 of 0 courses"
             )}
         </div>
         <div className="flex items-center space-x-2">
@@ -542,8 +504,6 @@ export function CoursesManager({
             </Button>
         </div>
       </div>
-      </>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -252,14 +252,19 @@ export default function VideoTagsPage() {
                     </TableHeader>
                     <TableBody>
                         {filteredTags.map((tag) => (
-                            <TableRow key={tag._id}>
+                            <TableRow 
+                                key={tag._id}
+                                className={`cursor-pointer hover:bg-muted/50 ${selectedTagId === tag._id ? "bg-muted" : ""}`}
+                                onClick={() => handleSelect(tag._id)}
+                            >
                                 <TableCell className="w-[50px]">
                                     <Checkbox 
                                         checked={selectedTagId === tag._id}
                                         onCheckedChange={() => handleSelect(tag._id)}
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                 </TableCell>
-                                <TableCell className="font-medium">
+                                <TableCell className="font-medium max-w-[200px] truncate" title={tag.name}>
                                     {tag.name}
                                 </TableCell>
                                 <TableCell>

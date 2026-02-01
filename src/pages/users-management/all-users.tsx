@@ -4,7 +4,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { toast } from "sonner";
 import { 
   Loader2, Trash2, Plus, MoreHorizontal, Copy, Edit, Shield, Ban, Lock, CheckCircle, 
-  Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter 
+  Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, 
+  Users
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
@@ -526,8 +527,9 @@ export default function AllUsersPage() {
               Error loading users: {(error as any).message}
             </div>
           ) : users.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-muted-foreground">
-              No users found.
+            <div className="flex h-40 items-center justify-center text-muted-foreground flex-col">
+              <Users className="h-10 w-10 mb-2 opacity-20" />
+              <p>{search ? `No users found matching "${search}"` : "No users found"}</p>
             </div>
           ) : (
             <table className="w-full caption-bottom text-sm border-collapse table-fixed">
@@ -575,19 +577,21 @@ export default function AllUsersPage() {
                     <TableRow
                       key={user.id}
                       data-index={virtualRow.index}
-                      className="w-full"
+                      className={`w-full cursor-pointer hover:bg-muted/50 ${isSelected ? "bg-muted" : ""}`}
+                      onClick={() => handleSelect(user.id)}
                     >
                       <TableCell className="w-[50px] py-2">
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => handleSelect(user.id)}
+                          onClick={(e) => e.stopPropagation()}
                           aria-label={`Select ${user.name}`}
                         />
                       </TableCell>
                       <TableCell className="w-[25%] py-2">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{user.name}</span>
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex flex-col max-w-[200px]">
+                          <span className="font-medium truncate" title={user.name}>{user.name}</span>
+                          <span className="text-xs text-muted-foreground truncate" title={user.email}>
                             {user.email}
                           </span>
                         </div>
@@ -683,13 +687,15 @@ export default function AllUsersPage() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          {meta ? (
+          {isLoading ? (
+            "Loading..."
+          ) : meta && meta.total > 0 ? (
             <>
               Showing {Math.min((meta.page - 1) * meta.limit + 1, meta.total)} to{" "}
               {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} users
             </>
           ) : (
-            "Loading..."
+            "Showing 0 to 0 of 0 users"
           )}
         </div>
         <div className="flex items-center space-x-2">

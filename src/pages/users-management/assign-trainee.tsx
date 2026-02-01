@@ -267,9 +267,9 @@ export default function AssignTraineePage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-muted-foreground">
+            <div className="flex h-40 items-center justify-center text-muted-foreground flex-col">
               <Users className="h-10 w-10 mb-2 opacity-20" />
-              <p>No users found</p>
+              <p>{search ? `No users found matching "${search}"` : "No users found"}</p>
             </div>
           ) : (
             <table className="w-full caption-bottom text-sm border-collapse table-fixed">
@@ -310,8 +310,8 @@ export default function AssignTraineePage() {
                     >
                       <TableCell className="w-[25%] py-2">
                         <div className="flex flex-col truncate">
-                          <span className="font-medium">{user.name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                          <span className="font-medium truncate" title={user.name}>{user.name}</span>
+                          <span className="text-xs text-muted-foreground truncate" title={user.email}>{user.email}</span>
                         </div>
                       </TableCell>
                       <TableCell className="w-[15%] py-2">
@@ -329,8 +329,8 @@ export default function AssignTraineePage() {
                         <div className="flex flex-col truncate">
                           {isAssigned ? (
                             <>
-                              <span className="font-medium">{user.traineeName}</span>
-                              <span className="text-xs text-muted-foreground">{user.traineeEmail}</span>
+                              <span className="font-medium truncate" title={user.traineeName || ""}>{user.traineeName}</span>
+                              <span className="text-xs text-muted-foreground truncate" title={user.traineeEmail || ""}>{user.traineeEmail}</span>
                             </>
                           ) : (
                             <span className="text-muted-foreground italic">Not Assigned</span>
@@ -390,13 +390,15 @@ export default function AssignTraineePage() {
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          {meta ? (
+          {isUsersLoading ? (
+            "Loading..."
+          ) : meta && meta.total > 0 ? (
             <>
               Showing {Math.min((meta.page - 1) * meta.limit + 1, meta.total)} to{" "}
               {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} users
             </>
           ) : (
-            "Loading..."
+            "Showing 0 to 0 of 0 users"
           )}
         </div>
         <div className="flex items-center space-x-2">
