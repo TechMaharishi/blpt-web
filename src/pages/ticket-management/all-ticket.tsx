@@ -12,7 +12,6 @@ import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
 import { useDebounce } from "@/hooks/use-debounce"
 
-// Interfaces based on API response
 interface User {
   _id: string
   name: string
@@ -57,6 +56,17 @@ interface SingleTicketResponse {
   data: Ticket
 }
 
+/**
+ * AllTicketsPage Component
+ * 
+ * A comprehensive dashboard for support staff to manage and resolve user tickets.
+ * 
+ * Features:
+ * - Infinite scrolling list of tickets (virtualized for performance)
+ * - Real-time debounced search
+ * - Detailed ticket view with split-pane layout
+ * - Resolution workflow with status updates
+ */
 export default function AllTicketsPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -66,7 +76,6 @@ export default function AllTicketsPage() {
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  // Fetch tickets with infinite scroll and search
   const { 
     data, 
     fetchNextPage, 
@@ -102,7 +111,6 @@ export default function AllTicketsPage() {
     overscan: 5,
   })
 
-  // Load more on scroll
   useEffect(() => {
     const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse()
 
@@ -125,7 +133,6 @@ export default function AllTicketsPage() {
     rowVirtualizer.getVirtualItems(),
   ])
 
-  // Fetch single ticket details when selected
   const { data: selectedTicketData, isLoading: isLoadingSelected } = useQuery({
     queryKey: ['ticket', selectedTicketId],
     queryFn: async () => {
@@ -136,7 +143,6 @@ export default function AllTicketsPage() {
     enabled: !!selectedTicketId
   })
 
-  // Resolve ticket mutation
   const resolveMutation = useMutation({
     mutationFn: async ({ id, message }: { id: string, message: string }) => {
       const response = await apiClient.post(`/support/tickets/${id}/resolve`, { message })
@@ -153,7 +159,6 @@ export default function AllTicketsPage() {
     }
   })
 
-  // Select first ticket by default when data loads
   useEffect(() => {
     if (allTickets.length > 0 && !selectedTicketId && !isLoadingTickets) {
       setSelectedTicketId(allTickets[0]._id)

@@ -1,10 +1,11 @@
 import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
-  useVirtualizer,
-} from "@tanstack/react-virtual";
-import {
+  ArrowUpDown,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   MoreHorizontal,
   Search,
@@ -50,8 +51,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
-// --- Types ---
-
 interface User {
   id: string;
   name: string;
@@ -72,14 +71,22 @@ interface AssignTraineePayload {
   traineeName: string;
 }
 
-// --- API Functions ---
-
-const fetchUsers = async ({ page = 1, limit = 100, search = "" }) => {
+/**
+ * Fetches a paginated list of users with "user" role.
+ * Supports searching, sorting, and pagination.
+ */
+const fetchUsers = async ({ 
+  page = 1, 
+  limit = 10, 
+  search = "", 
+  sortBy = "createdAt", 
+  sortDirection = "asc" 
+}) => {
   const params: any = {
     page,
     limit,
-    sortBy: "createdAt",
-    sortDirection: "asc",
+    sortBy,
+    sortDirection,
     role: "user",
     field: "name",
   };
@@ -87,64 +94,73 @@ const fetchUsers = async ({ page = 1, limit = 100, search = "" }) => {
     params.search = search;
   }
   const response = await apiClient.get("/admin/list-user", { params });
-  return response.data.data; // Assuming structure { data: { users: [], meta: {} } }
+  return response.data.data;
 };
 
+/**
+ * Fetches all available clinical trainees to populate the assignment dropdown.
+ * 
+ * Note: Currently fetches a large batch and filters client-side as a fallback
+ * if the backend does not support strict role filtering on this endpoint.
+ */
 const fetchTrainees = async () => {
-  // Fetch users with role 'trainee'
-  // Note: The backend might not support filtering by role directly in list-user based on provided curl.
-  // We will try to fetch all and filter, or use a specific endpoint if available.
-  // Based on prompt, we use list-user. We'll fetch a larger list to find trainees.
-  // In a real prod scenario, we'd want a dedicated endpoint or server-side filtering.
-  // For now, we'll fetch up to 1000 users and filter client-side as a fallback,
-  // or assume the backend supports role filtering if we pass it (common pattern).
-  // Let's try passing role=trainee. If not supported, we filter.
   const response = await apiClient.get("/admin/list-user", {
     params: { page: 1, limit: 1000, role: "trainee" },
   });
   
-  // If backend ignores 'role' param, we manually filter.
   const users = response.data.data.users || [];
   return users.filter((u: User) => u.role === "trainee");
 };
 
+/**
+ * Assigns a clinical trainee to a specific user.
+ */
 const assignTrainee = async (payload: AssignTraineePayload) => {
   const response = await apiClient.post("/assign-clinical/assign", payload);
   return response.data;
 };
 
-// --- Component ---
-
+/**
+ * AssignTraineePage Component
+ * 
+ * A management interface for assigning Clinical Trainees to Individual Learners.
+ * 
+ * Features:
+ * - Virtualized table for high-performance rendering of user lists.
+ * - Server-side pagination, sorting, and searching.
+ * - Dialog-based workflow for assigning or changing trainees.
+ * - Real-time status updates via optimistic UI or query invalidation.
+ */
 export default function AssignTraineePage() {
   const queryClient = useQueryClient();
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // State
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   
-  // Dialog States
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [actingUser, setActingUser] = useState<User | null>(null);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string>("");
 
-  // Queries
   const { data: usersData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ["users-assignment", search],
-    queryFn: () => fetchUsers({ search }),
-    // keepPreviousData: true, // Deprecated in v5, use placeholderData if needed, but simple fetch is fine
+    queryKey: ["users-assignment", page, limit, search, sortBy, sortDirection],
+    queryFn: () => fetchUsers({ page, limit, search, sortBy, sortDirection }),
   });
 
   const { data: traineesData } = useQuery({
     queryKey: ["trainees-list"],
     queryFn: fetchTrainees,
-    staleTime: 5 * 60 * 1000, // Cache trainees for 5 mins
+    staleTime: 5 * 60 * 1000, 
   });
 
   const users = useMemo(() => usersData?.users || [], [usersData]);
+  const meta = usersData?.meta;
 
-  // Mutations
   const assignMutation = useMutation({
     mutationFn: assignTrainee,
     onSuccess: () => {
@@ -159,15 +175,22 @@ export default function AssignTraineePage() {
     },
   });
 
-  // Virtualizer
   const rowVirtualizer = useVirtualizer({
     count: users.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 50, // Row height
+    estimateSize: () => 50, 
     overscan: 5,
   });
 
-  // Handlers
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortDirection("asc");
+    }
+  };
+
   const handleRowClick = (userId: string) => {
     if (selectedUserId === userId) {
       setSelectedUserId(null);
@@ -209,11 +232,8 @@ export default function AssignTraineePage() {
       ? totalSize - virtualItems[virtualItems.length - 1].end
       : 0;
 
-
-
   return (
     <div className="space-y-6 p-8 h-full flex flex-col">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">User–Trainee Assignments</h1>
         <p className="text-muted-foreground mt-1">
@@ -221,7 +241,6 @@ export default function AssignTraineePage() {
         </p>
       </div>
 
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="relative w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -234,7 +253,6 @@ export default function AssignTraineePage() {
         </div>
       </div>
 
-      {/* Table Container */}
       <div className="rounded-md border bg-background overflow-hidden">
         <div
           ref={parentRef}
@@ -257,7 +275,15 @@ export default function AssignTraineePage() {
             <table className="w-full caption-bottom text-sm border-collapse table-fixed">
               <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[25%] bg-background py-2">Individual Learner</TableHead>
+                  <TableHead 
+                    className="w-[25%] bg-background py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Individual Learner
+                      {sortBy === "name" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </TableHead>
                   <TableHead className="w-[15%] bg-background py-2">Email Verified</TableHead>
                   <TableHead className="w-[25%] bg-background py-2">Assigned Trainee</TableHead>
                   <TableHead className="w-[20%] bg-background py-2">Status</TableHead>
@@ -362,7 +388,62 @@ export default function AssignTraineePage() {
         </div>
       </div>
 
-      {/* Assign Trainee Dialog */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {meta ? (
+            <>
+              Showing {Math.min((meta.page - 1) * meta.limit + 1, meta.total)} to{" "}
+              {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} users
+            </>
+          ) : (
+            "Loading..."
+          )}
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 mr-4">
+            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <Select
+              value={limit.toString()}
+              onValueChange={(val) => {
+                setLimit(Number(val));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={limit} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!meta?.hasPrev || isUsersLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <div className="text-sm font-medium">
+            Page {meta?.page || 1} of {meta?.totalPages || 1}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!meta?.hasNext || isUsersLoading}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -376,14 +457,12 @@ export default function AssignTraineePage() {
           
           {actingUser && (
             <div className="space-y-6 py-4">
-              {/* User Info (Read-only) */}
               <div className="rounded-lg border p-4 bg-muted/20">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Selected User</Label>
                 <div className="mt-1 font-medium">{actingUser.name}</div>
                 <div className="text-sm text-muted-foreground">{actingUser.email}</div>
               </div>
 
-              {/* Trainee Selection */}
               <div className="space-y-3">
                 <Label>Select Trainee</Label>
                 <Select
@@ -435,7 +514,6 @@ export default function AssignTraineePage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -464,3 +542,4 @@ export default function AssignTraineePage() {
     </div>
   );
 }
+

@@ -4,6 +4,7 @@ import {
     Library,
     Users,
     Ticket,
+    PlusCircle,
     ChevronRight,
     type LucideIcon
 } from "lucide-react"
@@ -90,9 +91,13 @@ const getMenuItems = (rolePath: string): MenuItem[] => [
         icon: Ticket,
         items: [
             { title: "All Tickets", url: `/${rolePath}/tickets/all` },
-            { title: "Create Ticket", url: `/${rolePath}/tickets/create` },
             { title: "Ticket Types", url: `/${rolePath}/tickets/types` },
         ]
+    },
+    {
+        title: "Create Ticket",
+        icon: PlusCircle,
+        url: `/${rolePath}/tickets/create`,
     }
 ]
 
@@ -140,7 +145,7 @@ export function AppSidebar() {
                                             </CollapsibleContent>
                                         </Collapsible>
                                     ) : (
-                                        <SidebarMenuButton asChild>
+                                        <SidebarMenuButton asChild className="font-semibold text-sidebar-foreground">
                                             <Link to={item.url!}>
                                                 {item.icon && <item.icon />}
                                                 <span>{item.title}</span>
